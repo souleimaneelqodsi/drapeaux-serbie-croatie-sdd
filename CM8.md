@@ -159,7 +159,7 @@ Une proposition parmi d'autres si on a $C>2$ classes.
 **Poids** 
 
 * Les **poids** sont les paramètres appris par le réseau, associés aux neurones et optimisés lors de l'entraînement. 
-* L'entrainement se fait selon la technique de la descente de gradient (hors programme)
+* L'entrainement se fait selon la technique de la descente de gradient (vous le verrez en IAS en L3)
 
 +++ {"slideshow": {"slide_type": "slide"}}
 
@@ -238,7 +238,7 @@ Succession de strates. Chaque strate contient plusieurs couches:
 
 ##### Couche entièrement connectée (*FC, fully connected*)
 
-En fin de réseau, on utilisera des couches entièrement connectées aux sorties de la couche précédente. Leurs fonctions d'activations peuvent être calculées avec une multiplication matricielle qui permettre *in fine* de classifier nos images.
+En fin de réseau, on utilisera des couches entièrement connectées aux sorties de la couche précédente. Leurs fonctions d'activations peuvent être calculées avec une multiplication matricielle et permettent *in fine* de classifier nos images.
 
 +++ {"slideshow": {"slide_type": "slide"}}
 

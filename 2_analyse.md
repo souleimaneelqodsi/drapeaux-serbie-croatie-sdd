@@ -660,7 +660,7 @@ nbgrader:
 raise NotImplementedError()
 ```
 
-+++ {"deletable": false, "editable": false, "nbgrader": {"cell_type": "markdown", "checksum": "408e1527a651513d10f84124f94ba17a", "grade": false, "grade_id": "cell-4a804da27ed72447", "locked": true, "schema_version": 3, "solution": false, "task": false}, "user_expressions": []}
++++ {"deletable": false, "editable": false, "nbgrader": {"cell_type": "markdown", "checksum": "1bf6af8c6c9f30a56b1b12d35ee2e51d", "grade": false, "grade_id": "cell-4a804da27ed72447", "locked": true, "schema_version": 3, "solution": false, "task": false}, "user_expressions": []}
 
 D'après le scree plot obtenu, on voit que les premiers attributs
 contiennent la majorité de l'information. Nous prendrons les
@@ -671,8 +671,8 @@ cinq premières colonnes de `U` et l'étiquette du fruit dans la dernière
 colonne.
 
 **Indication:** Extraire les cinq premières colonnes de `U`, les
-passer comme argument à pd.DataFrame en spécifiant l'index de `df`
-comme index. Puis insérer la colonne `étiquette` de `df`.
+passer comme argument à `pd.DataFrame()` en spécifiant `index = df.index`.
+Puis insérer la colonne `étiquette` de `df`.
 
 ```{code-cell}
 ---

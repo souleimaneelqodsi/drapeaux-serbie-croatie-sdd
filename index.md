@@ -132,18 +132,18 @@ votre projet sur Gitlab. Par exemple, pour ajouter un fichier nommé
       B sont les deux membres du binôme, alors A fait :
 
           cd ~/IntroScienceDonnees
-          ./course.py share_with Semaine4 prenomB.nomB
+          ./course.py share_with Semaine8 prenomB.nomB
 
       et B fait :
 
           cd ~/IntroScienceDonnees
-          ./course.py share_with Semaine4 prenomA.nomA
+          ./course.py share_with Semaine8 prenomA.nomA
 
 - [ ] Indiquez à GitLab que vous travaillez en binôme. Pour cela, l'un
       des deux membres, ici A, fait :
 
           cd ~/IntroScienceDonnees
-          ./course.py submit Semaine4 --leader_name prenomB.nomB
+          ./course.py submit Semaine8 --leader_name prenomB.nomB
 
       Nous ne corrigerons que le devoir de B: à charge pour vous de
       vous assurer que celui-ci contient bien l'intégralité du travail

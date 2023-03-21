@@ -419,7 +419,7 @@ for name, img in clean_images.items():
 **Explication :** `splitext` sépare un nom de fichier de son extension :
 
 ```{code-cell}
-"machin.jpeg".splitext()
+os.path.splitext("machin.jpeg")
 ```
 
 +++ {"user_expressions": []}
