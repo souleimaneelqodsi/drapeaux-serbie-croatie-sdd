@@ -37,7 +37,7 @@ d'habitude, nous utiliserons un fichier `utilities.py` où nous vous
 fournissons quelques fonctions et que vous complèterez au fur et à
 mesure du projet:
 
-```{code-cell}
+```{code-cell} ipython3
 ---
 deletable: false
 editable: false
@@ -73,12 +73,11 @@ En commentant la ligne 2 ou la ligne 3, vous choisirez ici sur quel
 jeu de données vous travaillerez: les pommes et les bananes ou le
 vôtre.
 
-```{code-cell}
+```{code-cell} ipython3
 from intro_science_donnees import data
-dataset_dir = os.path.join(data.dir, 'ApplesAndBananas')
-# dataset_dir = 'data'
+dataset_dir = 'data'
 
-images = load_images(dataset_dir, "?[012]?.png")
+images = load_images(dataset_dir, "?[012]?.jpg")
 ```
 
 +++ {"deletable": false, "editable": false, "nbgrader": {"cell_type": "markdown", "checksum": "e340ceddb7a3c40363bfae50e6f524ce", "grade": false, "grade_id": "cell-efcac6252de311fd", "locked": true, "schema_version": 3, "solution": false, "task": false}, "user_expressions": []}
@@ -95,12 +94,12 @@ moins de trois caractères et dont le deuxième caractère est 0, 1, ou 2.
 De même, dans les exemples suivants, nous n'afficherons que les
 premières et dernières images :
 
-```{code-cell}
+```{code-cell} ipython3
 head = images.head()
 image_grid(head, titles=head.index)
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 tail = images.tail()
 image_grid(tail, titles=tail.index)
 ```
@@ -125,11 +124,11 @@ Dans les cellules suivantes, on recadre et redimensionne les images en
 sur le fruit. Vous pourrez faire mieux ensuite, dans la fiche sur le
 [prétraitement](3_extraction_d_attributs.md).
 
-```{code-cell}
+```{code-cell} ipython3
 images_cropped = images.apply(crop_image)
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 image_grid(images_cropped.head())
 ```
 
@@ -158,7 +157,7 @@ unidimensionnelle contenant les valeurs de tous les pixels de
 l'image. En appliquant cette fonction à toutes les images, on obtient
 un tableau de données où chaque ligne correspond à une image:
 
-```{code-cell}
+```{code-cell} ipython3
 ---
 deletable: false
 editable: false
@@ -175,7 +174,7 @@ nbgrader:
 show_source(image_to_series)
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 ---
 deletable: false
 editable: false
@@ -197,7 +196,7 @@ df
 
 **Exercice:**  Pouvez-vous expliquer le nombre de colonnes que nous obtenons?
 
-VOTRE RÉPONSE ICI
+Nous avons des images de taille 32 fois 32 contenant 3 composantes couleur, ce qui fait 32 fois 2 fois 3 = 3072.
 
 +++ {"deletable": false, "editable": false, "nbgrader": {"cell_type": "markdown", "checksum": "1bb2f91f68025b739029f3e7e72a1597", "grade": false, "grade_id": "cell-bac63aa1dc5a364a", "locked": true, "schema_version": 3, "solution": false, "task": false}}
 
@@ -206,7 +205,7 @@ l'étiquette (*ground truth*) de chaque image; dans le
 jeu de données fournies, ce sera 1 pour une pomme et -1 pour une
 banane:
 
-```{code-cell}
+```{code-cell} ipython3
 ---
 deletable: false
 editable: false
@@ -228,7 +227,7 @@ df
 
 **Exercice:** Afficher les statistiques descriptives de Pandas sur votre base de données. Peut-on interpréter ces statistiques?
 
-```{code-cell}
+```{code-cell} ipython3
 ---
 deletable: false
 nbgrader:
@@ -241,9 +240,10 @@ nbgrader:
   solution: true
   task: false
 ---
-# VOTRE CODE ICI
-raise NotImplementedError()
+df.describe()
 ```
+
+La moyenne des colonnes de 0 à 3071 correspond à la moyenne de chacune des composantes couleur de chacune des images (c'est-à-dire que les colonnes de 0 à 2 contiennent les composantes RGB de la première image). Les maximum de chaque composante sont quasiment tous égaux à 255 puisque chacune des images contient du blanc.
 
 +++ {"deletable": false, "editable": false, "nbgrader": {"cell_type": "markdown", "checksum": "0b04fc60580d53165e039ab88751a746", "grade": false, "grade_id": "cell-a69bb602ef2221a4", "locked": true, "schema_version": 3, "solution": false, "task": false}, "user_expressions": []}
 
@@ -253,7 +253,7 @@ raise NotImplementedError()
 
 Nous allons sauvegarder ces données brutes dans un fichier:
 
-```{code-cell}
+```{code-cell} ipython3
 ---
 deletable: false
 editable: false
@@ -275,7 +275,7 @@ df.to_csv('crop_data.csv')
 Cela vous permettra par la suite de reprendre la feuille à partir
 d'ici, sans avoir à reexécuter tous les traitements depuis le début. Vous pourrez le faire pour votre projet aux moments que vous jugez opportuns.
 
-```{code-cell}
+```{code-cell} ipython3
 ---
 deletable: false
 editable: false
@@ -303,7 +303,7 @@ Les données de la représentation en pixels sont volumineuses; par
 principe il faut tout de même essayer de les visualiser. On peut pour
 cela utiliser une carte thermique avec `Seaborn`.
 
-```{code-cell}
+```{code-cell} ipython3
 ---
 deletable: false
 editable: false
@@ -338,7 +338,7 @@ exploitable visuellement.
 On déclare le classifieur par plus proche voisin (KNN), depuis la
 librairie `scikit-learn`.
 
-```{code-cell}
+```{code-cell} ipython3
 ---
 deletable: false
 editable: false
@@ -367,7 +367,7 @@ en ensemble de test.
 La fonction `df_cross_validate` fournie automatise tout le
 processus. Consultez son code pour retrouver les étapes:
 
-```{code-cell}
+```{code-cell} ipython3
 ---
 deletable: false
 editable: false
@@ -384,7 +384,7 @@ nbgrader:
 show_source(df_cross_validate)
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 ---
 deletable: false
 editable: false
@@ -410,7 +410,7 @@ On a obtenu cette performance en comparant nos images pixel à pixel
 
 **Exercice:** Est-ce que ce score vous semble étonnant?
 
-VOTRE RÉPONSE ICI
+Cela semble être plutôt correct étant donné que nous n'avons pas encore effectué de prétraitement des images, et que le k dans le KNN a pris pl
 
 +++ {"deletable": false, "editable": false, "nbgrader": {"cell_type": "markdown", "checksum": "2ccd5d21c4e16e3002e18b313f690135", "grade": false, "grade_id": "cell-a93e6286afe7c468", "locked": true, "schema_version": 3, "solution": false, "task": false}, "user_expressions": []}
 
@@ -421,7 +421,7 @@ VOTRE RÉPONSE ICI
 Si vous reprenez cette feuille à partir d'ici, vous pouvez charger les
 données pour éviter d'avoir à tout reexécuter:
 
-```{code-cell}
+```{code-cell} ipython3
 ---
 deletable: false
 editable: false
@@ -478,7 +478,7 @@ normalisation.
   systématiquement ajouter la valeur `sys.float_info.epsilon` qui,
   comme son nom le suggère, est une toute petite valeur non nulle.
 
-```{code-cell}
+```{code-cell} ipython3
 ---
 deletable: false
 nbgrader:
@@ -496,7 +496,7 @@ import sys
 raise NotImplementedError()
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 ---
 deletable: false
 editable: false
@@ -513,7 +513,7 @@ nbgrader:
 df_scaled.describe()
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 ---
 deletable: false
 editable: false
@@ -541,7 +541,7 @@ assert (abs(df_scaled.std()-1) < 0.01).all()
 
 **Indication** : Vous pourrez vous inspirer de la fonction `elongation` vu lors du TP3/4 et du projet 1.
 
-```{code-cell}
+```{code-cell} ipython3
 ---
 deletable: false
 nbgrader:
@@ -558,7 +558,7 @@ nbgrader:
 raise NotImplementedError()
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 ---
 deletable: false
 editable: false
@@ -575,7 +575,7 @@ nbgrader:
 U.shape
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 ---
 deletable: false
 editable: false
@@ -592,7 +592,7 @@ nbgrader:
 S.shape
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 ---
 deletable: false
 editable: false
@@ -643,7 +643,7 @@ expliquent la majorité de la variance des données.
 - Renormaliser les valeurs propres par leur somme pour obtenir un
   pourcentage
 
-```{code-cell}
+```{code-cell} ipython3
 ---
 deletable: false
 nbgrader:
@@ -674,7 +674,7 @@ colonne.
 passer comme argument à `pd.DataFrame()` en spécifiant `index = df.index`.
 Puis insérer la colonne `étiquette` de `df`.
 
-```{code-cell}
+```{code-cell} ipython3
 ---
 deletable: false
 nbgrader:
@@ -696,7 +696,7 @@ svd_df
 
 **Exercice:** Ajoutez un assert et une condition if/else qui passerait pour votre propre jeu de données.
 
-```{code-cell}
+```{code-cell} ipython3
 ---
 deletable: false
 nbgrader:
@@ -722,7 +722,7 @@ raise NotImplementedError()
 attributs obtenus. Observez-vous que certaines caractéristiques ou
 paires de caractéristiques séparent bien les données?
 
-```{code-cell}
+```{code-cell} ipython3
 ---
 deletable: false
 editable: false
@@ -748,7 +748,7 @@ trois plus proches voisins en utilisant les cinq premiers
 attributs. Comparez les performances à celles obtenues avec la
 représentation des pixels directement.
 
-```{code-cell}
+```{code-cell} ipython3
 ---
 deletable: false
 nbgrader:
@@ -771,7 +771,7 @@ raise NotImplementedError()
 (accuracy) sur l'ensemble de test en fonction du nombre d'attributs de
 la PCA prise en compte par le classifieur (de 1 à 10 par exemple).
 
-```{code-cell}
+```{code-cell} ipython3
 ---
 deletable: false
 nbgrader:
@@ -802,6 +802,6 @@ Les feuilles suivantes aborderont d'autres aspects de l'analyse
 (biais, prétraitement, classifieur). Ouvrez la feuille
 sur le [prétraitement et l'extraction d'attributs](3_extraction_d_attributs.md).
 
-```{code-cell}
+```{code-cell} ipython3
 
 ```
