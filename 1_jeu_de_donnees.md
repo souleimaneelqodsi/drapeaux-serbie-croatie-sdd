@@ -79,7 +79,7 @@ Voilà comment préparer votre jeu de données :
 
 ## Chargement de votre jeu de données
 
-```{code-cell}
+```{code-cell} ipython3
 ---
 deletable: false
 editable: false
@@ -103,30 +103,30 @@ from intro_science_donnees import *
 from utilities import *
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 dataset_dir = 'data'
-images = load_images(dataset_dir, "*.png")
+images = load_images(dataset_dir, "*.jpg")
 ```
 
 +++ {"deletable": false, "editable": false, "nbgrader": {"cell_type": "markdown", "checksum": "ce0ec4237071bfe1e6b88f7f6226638c", "grade": false, "grade_id": "cell-6eec6709bb303693", "locked": true, "schema_version": 3, "solution": false, "task": false}}
 
 Combien d'images contient votre première série de données ? Stockez ce nombre dans une variable `n1`
 
-```{code-cell}
-n1 = 10 # Changez cette valeur
+```{code-cell} ipython3
+n1 = 24 # Changez cette valeur
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 first = images[:n1]
 image_grid(first, titles=first.index)
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 last = images[n1:]
 image_grid(last, titles=last.index)
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 ---
 deletable: false
 editable: false
@@ -165,7 +165,7 @@ utilitaire vous est fournis dans `utilities.py` (regardez comment il
 fonctionne!). Voici par exemple les métadonnées pour l'une des images
 en JPEG de notre jeu de données sur les mélanomes :
 
-```{code-cell}
+```{code-cell} ipython3
 from intro_science_donnees import data
 img = Image.open(os.path.join(data.dir, 'Melanoma', 'a01.jpg'))
 extract_metadata(img)
