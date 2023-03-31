@@ -410,7 +410,7 @@ On a obtenu cette performance en comparant nos images pixel à pixel
 
 **Exercice:** Est-ce que ce score vous semble étonnant?
 
-Cela semble être plutôt correct étant donné que nous n'avons pas encore effectué de prétraitement des images, et que le k dans le KNN a pris pl
+Cela semble être plutôt correct étant donné que nous n'avons pas encore effectué de prétraitement des images, et que le k dans le KNN a pris plusieurs valeurs différentes à travers la fonction df_cross_validate.
 
 +++ {"deletable": false, "editable": false, "nbgrader": {"cell_type": "markdown", "checksum": "2ccd5d21c4e16e3002e18b313f690135", "grade": false, "grade_id": "cell-a93e6286afe7c468", "locked": true, "schema_version": 3, "solution": false, "task": false}, "user_expressions": []}
 
@@ -492,8 +492,8 @@ nbgrader:
   task: false
 ---
 import sys
-# VOTRE CODE ICI
-raise NotImplementedError()
+df_scaled = (df-df.mean())/df.std()
+df_scaled = df_scaled.drop(axis=1, labels = "étiquette")
 ```
 
 ```{code-cell} ipython3
@@ -554,8 +554,7 @@ nbgrader:
   solution: true
   task: false
 ---
-# VOTRE CODE ICI
-raise NotImplementedError()
+U,S,V = np.linalg.svd(df_scaled, full_matrices=True)
 ```
 
 ```{code-cell} ipython3
@@ -656,8 +655,12 @@ nbgrader:
   solution: true
   task: false
 ---
-# VOTRE CODE ICI
-raise NotImplementedError()
+# Calcul des valeurs propres
+vals = S**2 / np.sum(S**2)
+
+# Affichage du scree plot
+plt.plot(range(1, 25), vals, '-o')
+plt.show()
 ```
 
 +++ {"deletable": false, "editable": false, "nbgrader": {"cell_type": "markdown", "checksum": "1bf6af8c6c9f30a56b1b12d35ee2e51d", "grade": false, "grade_id": "cell-4a804da27ed72447", "locked": true, "schema_version": 3, "solution": false, "task": false}, "user_expressions": []}
@@ -687,8 +690,12 @@ nbgrader:
   solution: true
   task: false
 ---
-# VOTRE CODE ICI
-raise NotImplementedError()
+# Extraction des cinq premières colonnes de U
+U_5 = U[:, :5]
+
+# Création d'un nouveau DataFrame avec les cinq premières colonnes de U et l'étiquette du fruit
+svd_df = pd.DataFrame(U_5, index=df.index)
+svd_df['étiquette'] = df['étiquette']
 svd_df
 ```
 
@@ -712,8 +719,8 @@ nbgrader:
 ---
 if dataset_dir == os.path.join(data.dir, 'ApplesAndBananas'):
     assert svd_df.shape == (58,6) 
-# VOTRE CODE ICI
-raise NotImplementedError()
+else :
+    assert svd_df.shape == (24, 6)
 ```
 
 +++ {"deletable": false, "editable": false, "nbgrader": {"cell_type": "markdown", "checksum": "6cec2d7e9bc3a70790b0948b0b404a22", "grade": false, "grade_id": "cell-c3d368d566dc7676", "locked": true, "schema_version": 3, "solution": false, "task": false}, "user_expressions": []}
@@ -761,8 +768,7 @@ nbgrader:
   solution: true
   task: false
 ---
-# VOTRE CODE ICI
-raise NotImplementedError()
+p_tr, s_tr, p_te, s_te = df_cross_validate(svd_df, sklearn_model, sklearn_metric, verbose=True)
 ```
 
 +++ {"deletable": false, "editable": false, "nbgrader": {"cell_type": "markdown", "checksum": "a6b8a616ee8b8596eebed342558d63d1", "grade": false, "grade_id": "cell-36f11e07b9930a24", "locked": true, "schema_version": 3, "solution": false, "task": false}, "user_expressions": []}
@@ -796,7 +802,9 @@ Cette première feuille vous fait passer par le formatage de base des
 données et une analyse de données donnant une référence. Prenez ici
 quelques notes sur ce que vous avez appris, observé, interprété.
 
-VOTRE RÉPONSE ICI
+Nous avons observé qu'avec la méthode KNN avec un paramètre k = 3, nous avons obtenu de meilleurs résultats avec la réprésentation des pixels qu'avec les 5 premières colonnes de la première valeur singulière de la table normalisée. Cependant, les résultats demeurent mitigés.
+
+
 
 Les feuilles suivantes aborderont d'autres aspects de l'analyse
 (biais, prétraitement, classifieur). Ouvrez la feuille
