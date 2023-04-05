@@ -155,7 +155,7 @@ def foreground_blueness_filter(
     F0 = np.maximum(D, V)
     threshold = theta * (np.max(F0) - np.min(F0))
     F = F0 > threshold
-    return F@
+    return F
   
   
   
@@ -400,3 +400,96 @@ def extract_metadata(img: Image.Image) -> pd.Series:
     return pd.Series({ExifTags.TAGS[key]: value
                       for key, value in img.getexif().items()},
                      dtype=object)
+
+def colorStrongFilter(img : Image.Image, c : str, intensite = 0.65, seuil_lum = 80) :
+  
+    M = np.array(img) 
+    dim = M.shape
+    Mbinaire = np.zeros((dim[0], dim[1]))
+    indice = 0 #Indice de la couleur "c" dans la composante RGB d'un pixel. 0 est Rouge.
+    if(c=="R") :
+        indice = 0
+    elif(c =="G") : 
+        indice = 1
+    else : 
+        indice = 2
+    for y in range (dim[0]) : 
+        for x in range(dim[1]) : 
+            rgbMoyenne = (M[y, x, 0] + M[y, x, 1] + M[y, x, 2])/3
+            print(rgbMoyenne)
+            pixel_intensite = M[y, x, indice] / rgbMoyenne
+            Mbinaire[y, x] = (rgbMoyenne > seuil_lum and pixel_intensite > intensite)
+    return Mbinaire 
+
+def colorStrongFilterv2(img : Image.Image, c : str, intensite = 0.65):
+    RGB = {'R': 2, 'G' : 1, 'B' : 0}
+    M = np.array(img)
+    moyennePixels = (M[:, :, 0] + M[:, :, 1] + M[:, :, 2])/3
+    pixel_intensite = M[:, :, RGB[c]]/moyennePixels
+    return (pixel_intensite > intensite)
+
+
+def colorStrongFilterv3(img : Image.Image, c : str, i1 : int, i2 : int):
+    M = np.array(img)
+    RGB = {'R': 0, 'G' : 1, 'B' : 2}
+    cond1 = M[:, :, RGB[c]] > i1
+    del RGB[c]
+    moy = (M[:, :, list(RGB.values())[0]] + M[:, :, list(RGB.values())[1]])/2
+    cond2 = moy < i2
+    return np.logical_and(cond1, cond2)
+    
+
+def whiteness(img : Image.Image, power : int):
+    M = np.array(img)
+    return abs(M[:, :, 0] - M[:, :, 1] - M[:, :, 2]) > power
+    
+def axisCheck(img, y, x):
+  
+    M = np.array(img)
+    dim = M.shape 
+    trueCount = 0
+    
+    for i in range(dim[1]) : 
+        if(M[i, x]) : 
+            trueCount += 1
+    for m in range(dim[0]) :
+        if(M[y, m]) : 
+            trueCount += 1
+    return trueCount 
+
+def centerFinder(img, precision = 2) :
+  
+    #On essaye de definir une boite qui va encadrer l'objet; on va apres rognee le contour de cette boite
+    M = np.array(img)
+    crop1 = [0,0] 
+    crop2 = [0,0]
+    dim = M.shape
+
+    signal = 0 #Signale quand mettre fin une boucle.
+    for y in range (dim[1]) : #On essaye de determiner le pixel se trouvant à l'extremité en haut à gauche de la boite.
+        for x in range(dim[0]) : 
+            resultat = axisCheck(img, y, x)
+            if(resultat >= precision) : #precision sert donc a éviter les pixels ayant echapes au nettoyage apres le filtrage.
+                crop1 = [y, x]
+                signal = 1
+                break
+        if(signal) : 
+            break 
+    signal = 0 
+    for y in range (dim[1], 0, -1) : #La meme chose, mais en partant de la diagonale se trouvant en bas à gauche, on essaye donc de determiner le pixel se trouvant à l'extremité en bas à droite de la boite.
+        for x in range(dim[0], 0, -1) : 
+            resultat = axisCheck(img, y, x)
+            if(resultat >= precision) :
+                crop2 = [y, x]
+                signal = 1
+                break
+        if(signal) : 
+            break 
+    
+    center = [(crop1[1] + crop2[1])/2//1 ,(crop1[0] + crop2[0])/2//1 ]
+    radius = max([crop2[1] - crop1[1], crop2[0] - crop1[0]])/2//1 + 10 #10 pixels de "securite"
+    if center[0] + radius >= dim[1] :  # Dernière verrification pour voir si radius + centre ne depasse pas le tableau. ">=" car dim est plus grand de 1 que l'indice du dernier element de l'array.
+        radius -= abs(radius - dim[1])
+    if center[1] + radius >= dim[0] : 
+        radius -= abs(radius - dim[0])
+    return center, radius 

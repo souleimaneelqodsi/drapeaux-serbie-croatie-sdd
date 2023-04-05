@@ -179,6 +179,10 @@ image_grid([foreground_redness_filter(img, theta=.75)
             for img in sample])
 ```
 
+```{code-cell} ipython3
+image_grid([colorStrongFilterv3(img, 'B', 100, 75) for img in sample])
+```
+
 +++ {"user_expressions": []}
 
 On peut voir que selon s'il s'agit d'objets sombres sur fond clair ou
@@ -186,6 +190,10 @@ d'objets clairs sur fond sombre, on n'obtient pas les mêmes valeurs
 booléenne en sortie de `foreground_filter`. La fonction
 `invert_if_light_background` inverse simplement les valeurs booléennes
 si une majorité de `True` est détectée. Voilà le résultat.
+
+```{code-cell} ipython3
+image_grid([virerLeBlanc(img, 70) for img in sample])
+```
 
 ```{code-cell} ipython3
 image_grid([invert_if_light_background(foreground_redness_filter(img, theta=.6))
