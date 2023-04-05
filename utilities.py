@@ -144,6 +144,21 @@ def foreground_redness_filter(
     return F
 
 
+def foreground_blueness_filter(
+    img: Union[Image.Image, np .ndarray], theta: float = 2 / 3
+) -> np.ndarray:
+    """Extract a numpy array with True as foreground
+    and False as background from a PIL image.
+    Parameter theta is a relative binarization threshold."""
+    D = difference_filter(img)
+    V = value_filter(img)
+    F0 = np.maximum(D, V)
+    threshold = theta * (np.max(F0) - np.min(F0))
+    F = F0 > threshold
+    return F@
+  
+  
+  
 def invert_if_light_background(img: np.ndarray) -> np.ndarray:
     """Create a black and white image outlining the foreground."""
     if np.count_nonzero(img) > np.count_nonzero(np.invert(img)):

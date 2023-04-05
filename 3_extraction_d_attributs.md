@@ -60,7 +60,7 @@ besoin. Comme d'habitude, nous vous fournissons quelques utilitaires
 dans le fichier `utilities.py`. Vous pouvez ajouter vos propres
 fonctions au fur et à mesure du projet:
 
-```{code-cell}
+```{code-cell} ipython3
 # Automatically reload code when changes are made
 %load_ext autoreload
 %autoreload 2
@@ -87,7 +87,7 @@ classification, nous calculerons au fur et à mesure les performances
 d'un classificateur -- ici du plus proche voisin kNN -- et nous les
 stockerons dans une table de données `performances`:
 
-```{code-cell}
+```{code-cell} ipython3
 sklearn_model = KNeighborsClassifier(n_neighbors=3)
 performances = pd.DataFrame(columns = ['Traitement', 'perf_tr', 'std_tr', 'perf_te', 'std_te'])
 performances
@@ -103,11 +103,11 @@ En mettant en commentaire la ligne 2 puis la ligne 1, vous choisirez
 ici sur quel jeu de données le prétraitement s'applique: d'abord les
 pommes et les bananes, puis le vôtre.
 
-```{code-cell}
-dataset_dir = os.path.join(data.dir, 'ApplesAndBananas')
-# dataset_dir = 'data'
+```{code-cell} ipython3
+#dataset_dir = os.path.join(data.dir, 'ApplesAndBananas')
+dataset_dir = 'data'
 
-images = load_images(dataset_dir, "*.png")
+images = load_images(dataset_dir, "*.jpg")
 ```
 
 +++ {"user_expressions": []}
@@ -115,11 +115,11 @@ images = load_images(dataset_dir, "*.png")
 Comme le jeu de données peut être gros, nous extrayons un échantillon
 de dix pommes et dix bananes pour expérimenter et visualiser :
 
-```{code-cell}
+```{code-cell} ipython3
 sample = list(images[:10]) + list(images[-10:])
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 image_grid(sample)
 ```
 
@@ -128,12 +128,13 @@ image_grid(sample)
 Calculons les performances de notre classificateur en l'appliquant
 directement à la représentation en pixels des images :
 
-```{code-cell}
+```{code-cell} ipython3
 df_raw = images.apply(image_to_series)
 df_raw['class'] = df_raw.index.map(lambda name: 1 if name[0] == 'a' else -1)
+df_raw = df_raw.dropna()
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 # Validation croisée
 p_tr, s_tr, p_te, s_te = df_cross_validate(df_raw, sklearn_model, sklearn_metric)
 metric_name = sklearn_metric.__name__.upper()
@@ -145,7 +146,7 @@ print("AVERAGE TEST {0:s} +- STD: {1:.2f} +- {2:.2f}".format(metric_name, p_te, 
 
 Ajoutons ces résultats à notre table `performances` :
 
-```{code-cell}
+```{code-cell} ipython3
 performances.loc[0] = ["Images brutes", p_tr, s_tr, p_te, s_te]
 performances.style.format(precision=2).background_gradient(cmap='Blues')
 ```
@@ -173,7 +174,7 @@ les bananes, on se contentera de la valeur 2/3. Avec vos données,
 faites varier cette valeur de seuil pour trouver la valeur qui semble
 la plus adéquate.
 
-```{code-cell}
+```{code-cell} ipython3
 image_grid([foreground_redness_filter(img, theta=.75)
             for img in sample])
 ```
@@ -186,7 +187,7 @@ booléenne en sortie de `foreground_filter`. La fonction
 `invert_if_light_background` inverse simplement les valeurs booléennes
 si une majorité de `True` est détectée. Voilà le résultat.
 
-```{code-cell}
+```{code-cell} ipython3
 image_grid([invert_if_light_background(foreground_redness_filter(img, theta=.6))
             for img in sample])
 ```
@@ -198,7 +199,7 @@ C'est légèrement mieux et nous nous en contenterons.
 **Pour aller plus loin ♣**: Les images restent très bruitées; on peut
 appliquer un filtre afin de réduire les pixels isolés:
 
-```{code-cell}
+```{code-cell} ipython3
 image_grid([scipy.ndimage.gaussian_filter(
               invert_if_light_background(
                   foreground_redness_filter(img, theta=.6)),
@@ -214,7 +215,7 @@ faits au fil de l'eau (seuil, filtre par rougeur, débruitage).
 La fonction suivante résume tous les choix faits pour extraire l'avant
 plan: <a name="choix_extraction"></a>
 
-```{code-cell}
+```{code-cell} ipython3
 def my_foreground_filter(img):
     foreground = foreground_redness_filter(img, theta=.6)
     foreground = invert_if_light_background(foreground)
@@ -241,7 +242,7 @@ plan.
 
 Faisons cela sur la première image :
 
-```{code-cell}
+```{code-cell} ipython3
 img = images[0]
 img
 ```
@@ -251,12 +252,12 @@ img
 On calcule l'avant plan de l'image et l'on extrait les coordonnées de
 ses pixels :
 
-```{code-cell}
+```{code-cell} ipython3
 foreground = my_foreground_filter(img)
 coordinates = np.argwhere(foreground)
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 img
 ```
 
@@ -264,7 +265,7 @@ img
 
 que l'on affiche comme un nuage de points :
 
-```{code-cell}
+```{code-cell} ipython3
 plt.scatter(coordinates[:,1], -coordinates[:,0], marker="x");
 ```
 
@@ -274,12 +275,12 @@ On calcule maintenant le barycentre des pixels de l'avant plan --
 c'est-à-dire la moyenne des coordonnées sur les X et les Y -- afin
 d'estimer les coordonnées du centre du fruit :
 
-```{code-cell}
+```{code-cell} ipython3
 center = (np.mean(coordinates[:,1]), np.mean(coordinates[:,0]))
 center
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 plt.scatter(coordinates[:,1], -coordinates[:,0], marker="x");
 plt.scatter(center[0], -center[1], 300, c='r', marker='+',linewidth=5);
 ```
@@ -302,11 +303,11 @@ fruit, il nous suffit de recadrer autour de ce centre. Une fonction
 cette fonction par rapport à l'ancienne fonction `crop_image` de la
 semaine précédente :
 
-```{code-cell}
+```{code-cell} ipython3
 crop_image(img) 
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 crop_around_center(img, center)
 ```
 
@@ -326,7 +327,7 @@ une unique fonction effectuant le prétraitement<a
 name="choix_pretraitement"></a>. Cela facilite l'application de ce
 traitement à toute image et permet de documenter les choix faits :
 
-```{code-cell}
+```{code-cell} ipython3
 def my_preprocessing(img):
     """
     Prétraitement d'une image
@@ -348,7 +349,7 @@ def my_preprocessing(img):
     return img
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 plt.imshow(my_preprocessing(images[0]));
 ```
 
@@ -356,12 +357,12 @@ plt.imshow(my_preprocessing(images[0]));
 
 Appliquons le prétraitement à toutes les images :
 
-```{code-cell}
+```{code-cell} ipython3
 clean_images = images.apply(my_preprocessing)
 clean_sample = list(clean_images[:10]) + list(clean_images[-10:])
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 image_grid(clean_sample)
 ```
 
@@ -374,7 +375,7 @@ image_grid(clean_sample)
 Convertissons maintenant les images prétraitées dans leurs
 représentations en pixels, regroupées dans une table:
 
-```{code-cell}
+```{code-cell} ipython3
 # conversion
 df_clean = clean_images.apply(image_to_series)
 # ajout des étiquettes
@@ -386,7 +387,7 @@ df_clean['class'] = df_clean.index.map(lambda name: 1 if name[0] == 'a' else -1)
 On vérifie les performance de notre classificateur sur les images
 prétraitées et on les ajoute à notre table `performances` :
 
-```{code-cell}
+```{code-cell} ipython3
 # Validation croisée (LENT)
 p_tr, s_tr, p_te, s_te = df_cross_validate(df_clean, sklearn_model, sklearn_metric)
 metric_name = sklearn_metric.__name__.upper()
@@ -394,7 +395,7 @@ print("AVERAGE TRAINING {0:s} +- STD: {1:.2f} +- {2:.2f}".format(metric_name, p_
 print("AVERAGE TEST {0:s} +- STD: {1:.2f} +- {2:.2f}".format(metric_name, p_te, s_te))
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 performances.loc[1] = ["Images prétraitées", p_tr, s_tr, p_te, s_te]
 performances.style.format(precision=2).background_gradient(cmap='Blues')
 ```
@@ -408,7 +409,7 @@ performances.style.format(precision=2).background_gradient(cmap='Blues')
 Nous sauvegardons maintenant les images prétraitées dans le répertoire
 `clean_data` au format `PNG` :
 
-```{code-cell}
+```{code-cell} ipython3
 os.makedirs('clean_data', exist_ok=True)
 for name, img in clean_images.items():
     img.save(os.path.join('clean_data', os.path.splitext(name)[0]+".png"))
@@ -418,7 +419,7 @@ for name, img in clean_images.items():
 
 **Explication :** `splitext` sépare un nom de fichier de son extension :
 
-```{code-cell}
+```{code-cell} ipython3
 os.path.splitext("machin.jpeg")
 ```
 
@@ -426,7 +427,7 @@ os.path.splitext("machin.jpeg")
 
 Nous sauvegardons la table de données dans un fichier `clean_data.csv` :
 
-```{code-cell}
+```{code-cell} ipython3
 df_clean.to_csv('clean_data.csv')
 ```
 
@@ -436,7 +437,7 @@ Ainsi il sera possible de travailler sur la suite de cette feuille et
 les feuilles ultérieures sans avoir besoin de refaire le
 prétraitement :
 
-```{code-cell}
+```{code-cell} ipython3
 df_clean = pd.read_csv('clean_data.csv', index_col=0)
 ```
 
@@ -473,7 +474,7 @@ avons fait la moyenne de ce filtre sur les fruits pour obtenir un
 attribut (valeur unique par image). Ici, affichons simplement la
 différence `R-G` :
 
-```{code-cell}
+```{code-cell} ipython3
 image_grid([redness_filter(img)
             for img in clean_sample])
 ```
@@ -493,7 +494,7 @@ VOTRE RÉPONSE ICI
 Il s'agit d'un filtre de couleur qui extrait la rougeur de chaque
 pixel calculée avec $R-(G+B)/2$ :
 
-```{code-cell}
+```{code-cell} ipython3
 image_grid([difference_filter(img)
             for img in clean_sample])
 ```
@@ -516,7 +517,7 @@ dans les fonctions `foreground_filter` ou `foreground_color_filter`.
 NB: N'oubliez pas de convertir les images en tableau `numpy` pour
 appliquer les opérateurs binaires `<`, `>`, `==`, etc.
 
-```{code-cell}
+```{code-cell} ipython3
 image_grid([np.mean(np.array(img), axis = 2) < 100 
             for img in clean_sample])
 ```
@@ -532,7 +533,7 @@ doit soustraire l'image seuillée avec elle même en la décalant d'un
 pixel vers le haut (resp. à droite). On fourni cette extraction de
 contours avec la fonction `contours` :
 
-```{code-cell}
+```{code-cell} ipython3
 image_grid([contours(np.mean(np.array(img), axis = 2) < 100 ) 
             for img in clean_sample])
 ```
@@ -562,7 +563,7 @@ Ainsi que trois autres attributs sur la forme:
 5. `perimeter` : nombre de pixels extraits du contour;
 6. `surface` : nombre de pixels `True` après avoir extrait la forme.
 
-```{code-cell}
+```{code-cell} ipython3
 df_features = pd.DataFrame({'redness': clean_images.apply(redness),
                             'greenness': clean_images.apply(greenness),
                             'blueness': clean_images.apply(blueness),
@@ -587,7 +588,7 @@ colonnes soient égales à 1.
 Rappel: notez l'utilisation d'une toute petite valeur epsilon pour
 éviter une division par 0 au cas où une colonne soit constante :
 
-```{code-cell}
+```{code-cell} ipython3
 epsilon = sys.float_info.epsilon
 df_features = (df_features - df_features.mean())/(df_features.std() + epsilon) # normalisation 
 df_features.describe() # nouvelles statistiques de notre jeu de donnée
@@ -598,7 +599,7 @@ df_features.describe() # nouvelles statistiques de notre jeu de donnée
 On ajoute nos étiquettes (1 pour les pommes, -1 pour les bananes) dans
 la dernière colonne :
 
-```{code-cell}
+```{code-cell} ipython3
 df_features["class"] = df_clean["class"]
 ```
 
@@ -606,11 +607,11 @@ df_features["class"] = df_clean["class"]
 
 Et des valeurs par défaut:
 
-```{code-cell}
+```{code-cell} ipython3
 df_features[df_features.isna()] = 0
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 df_features.style.background_gradient(cmap='coolwarm')
 ```
 
@@ -619,7 +620,7 @@ df_features.style.background_gradient(cmap='coolwarm')
 On vérifie les performance de notre classificateur sur les attributs
 et on les ajoute à notre table `performances` :
 
-```{code-cell}
+```{code-cell} ipython3
 # Validation croisée (LENT)
 p_tr, s_tr, p_te, s_te = df_cross_validate(df_features, sklearn_model, sklearn_metric,)
 metric_name = sklearn_metric.__name__.upper()
@@ -627,7 +628,7 @@ print("AVERAGE TRAINING {0:s} +- STD: {1:.2f} +- {2:.2f}".format(metric_name, p_
 print("AVERAGE TEST {0:s} +- STD: {1:.2f} +- {2:.2f}".format(metric_name, p_te, s_te))
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 performances.loc[2] = ["6 attributs ad-hoc", p_tr, s_tr, p_te, s_te]
 performances.style.format(precision=2).background_gradient(cmap='Blues')
 ```
@@ -656,7 +657,7 @@ notre classificateur. Pour cela, nous tenterons deux approches :
 Dans cette approche, on commence par calculer les corrélations de
 chacun de nos attributs avec les étiquettes :
 
-```{code-cell}
+```{code-cell} ipython3
 # Compute correlation matrix
 corr = df_features.corr()
 corr.style.format(precision=2).background_gradient(cmap='coolwarm')
@@ -673,23 +674,23 @@ davantage avec les étiquettes.
 **NB**: On en profite pour renormaliser en même temps que l'on ajoute
 des attributs.
 
-```{code-cell}
+```{code-cell} ipython3
 clean_images.apply(get_colors)
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 s = df_features.iloc[3].replace({'redness': 4})
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 df_features
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 dict([[1,2], [4,5]])
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 header = ['R','G','B','M=maxRGB', 'm=minRGB', 'C=M-m', 'R-(G+B)/2', 'G-B', 'G-(R+B)/2', 'B-R', 'B-(G+R)/2', 'R-G', '(G-B)/C', '(B-R)/C', '(R-G)/C', '(R+G+B)/3', 'C/V']
 
 df_features_large = df_features.drop("class", axis = 1)
@@ -711,7 +712,7 @@ df_features_large
 On vérifie les performance de notre classificateur sur ce large
 ensemble d'attributs et on les ajoute à notre table `performances` :
 
-```{code-cell}
+```{code-cell} ipython3
 # Validation croisée (LENT)
 p_tr, s_tr, p_te, s_te = df_cross_validate(df_features_large, sklearn_model, sklearn_metric)
 metric_name = sklearn_metric.__name__.upper()
@@ -719,12 +720,12 @@ print("AVERAGE TRAINING {0:s} +- STD: {1:.2f} +- {2:.2f}".format(metric_name, p_
 print("AVERAGE TEST {0:s} +- STD: {1:.2f} +- {2:.2f}".format(metric_name, p_te, s_te))
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 performances.loc[3] = ["23 attributs ad-hoc", p_tr, s_tr, p_te, s_te]
 performances.style.format(precision=2).background_gradient(cmap='Blues')
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 # Compute correlation matrix
 corr_large = df_features_large.corr()
 corr_large.style.format(precision=2).background_gradient(cmap='coolwarm')
@@ -743,7 +744,7 @@ intéressants pour nous.
 On va donc ordonner les attributs qui corrèlent le plus avec nos
 étiquettes (en valeur absolue) :
 
-```{code-cell}
+```{code-cell} ipython3
 # Sort by the absolute value of the correlation coefficient
 sval = corr_large['class'][:-1].abs().sort_values(ascending=False)
 ranked_columns = sval.index.values
@@ -755,7 +756,7 @@ print(ranked_columns)
 Sélectionnons seulement les cinq premiers attributs et visualisons
 leur valeurs dans un pair-plot :
 
-```{code-cell}
+```{code-cell} ipython3
 col_selected = ranked_columns[0:5]
 df_features_final = pd.DataFrame.copy(df_features_large)
 df_features_final = df_features_final[col_selected]
@@ -775,14 +776,14 @@ calcule les performances en rajoutant les attributs dans l'ordre du
 classement fait dans la sous-section précédente (classement en
 fonction de la corrélation avec les étiquettes).
 
-```{code-cell}
+```{code-cell} ipython3
 # On importe notre modèle
 from sklearn.metrics import balanced_accuracy_score as sklearn_metric
 sklearn_model = KNeighborsClassifier(n_neighbors=3)
 feat_lc_df, ranked_columns = feature_learning_curve(df_features_large, sklearn_model, sklearn_metric)
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 #feat_lc_df[['perf_tr', 'perf_te']].plot()
 plt.errorbar(feat_lc_df.index+1, feat_lc_df['perf_tr'], yerr=feat_lc_df['std_tr'], label='Training set')
 plt.errorbar(feat_lc_df.index+1, feat_lc_df['perf_te'], yerr=feat_lc_df['std_te'], label='Test set')
@@ -805,7 +806,7 @@ On pourra exporter un nouveau fichier CSV appelé `features_data.csv`
 contenant les attributs utiles. Pour l'exemple, nous exporterons les
 cinq premiers attributs comme dans l'exemple plus haut :
 
-```{code-cell}
+```{code-cell} ipython3
 df_features_final.to_csv('features_data.csv') # export des données dans un fichier
 #df_features_final = pd.read_csv('features_data.csv')  # chargement du fichier dans le notebook
 ```
@@ -816,7 +817,7 @@ Enfin, on ajoute les performance de notre classificateur sur ce
 sous-ensemble d'attributs sélectionnées par analyse de variance
 univariée et on les ajoute à notre tableau de données `performances` :
 
-```{code-cell}
+```{code-cell} ipython3
 # Validation croisée
 p_tr, s_tr, p_te, s_te = df_cross_validate(df_features_final, sklearn_model, sklearn_metric)
 metric_name = sklearn_metric.__name__.upper()
@@ -824,7 +825,7 @@ print("AVERAGE TRAINING {0:s} +- STD: {1:.2f} +- {2:.2f}".format(metric_name, p_
 print("AVERAGE TEST {0:s} +- STD: {1:.2f} +- {2:.2f}".format(metric_name, p_te, s_te))
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 performances.loc[4] = ["5 attributs par analyse de variance univarié", p_tr, s_tr, p_te, s_te]
 performances.style.format(precision=2).background_gradient(cmap='Blues')
 ```
@@ -844,7 +845,7 @@ bonne performance de classification pris ensemble.
 Pour analyser cela, on considère toutes les paires d'attributs et on
 calcule nos performances avec ces paires :
 
-```{code-cell}
+```{code-cell} ipython3
 best_perf = -1
 std_perf = -1
 best_i = 0
@@ -888,6 +889,6 @@ VOTRE RÉPONSE ICI
 Passez ensuite à la feuille sur la [comparaison de
 classificateurs](4_classificateurs.md)!
 
-```{code-cell}
+```{code-cell} ipython3
 
 ```
