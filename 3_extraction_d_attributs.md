@@ -180,7 +180,10 @@ image_grid([foreground_redness_filter(img, theta=.75)
 ```
 
 ```{code-cell} ipython3
-image_grid([colorStrongFilterv3(img, 'B', 100, 75) for img in sample])
+bleu = [colorStrongFilter(img, 'B', 100, 75) for img in sample]
+rouge = [colorStrongFilter(img, 'R', 75, 75) for img in sample]
+vert = [colorStrongFilter(img, 'G', 100, 75) for img in sample]
+image_grid(bleu)
 ```
 
 +++ {"user_expressions": []}
@@ -192,7 +195,8 @@ booléenne en sortie de `foreground_filter`. La fonction
 si une majorité de `True` est détectée. Voilà le résultat.
 
 ```{code-cell} ipython3
-image_grid([virerLeBlanc(img, 70) for img in sample])
+blanc = [whiteness(img, 70) for img in sample]
+image_grid(blanc)
 ```
 
 ```{code-cell} ipython3
@@ -272,6 +276,10 @@ img
 +++ {"user_expressions": []}
 
 que l'on affiche comme un nuage de points :
+
+```{code-cell} ipython3
+image_grid([flag(img) for img in sample])
+```
 
 ```{code-cell} ipython3
 plt.scatter(coordinates[:,1], -coordinates[:,0], marker="x");

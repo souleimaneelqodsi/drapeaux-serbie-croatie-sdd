@@ -3,6 +3,7 @@ import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
 from PIL import Image, ExifTags  # type: ignore
 from sklearn.model_selection import StratifiedShuffleSplit  # type: ignore
+from scipy.ndimage import gaussian_filter
 
 
 def crop_image(img: Image.Image, crop_size: int = 32) -> Image.Image:
@@ -401,47 +402,83 @@ def extract_metadata(img: Image.Image) -> pd.Series:
                       for key, value in img.getexif().items()},
                      dtype=object)
 
-def colorStrongFilter(img : Image.Image, c : str, intensite = 0.65, seuil_lum = 80) :
-  
-    M = np.array(img) 
-    dim = M.shape
-    Mbinaire = np.zeros((dim[0], dim[1]))
-    indice = 0 #Indice de la couleur "c" dans la composante RGB d'un pixel. 0 est Rouge.
-    if(c=="R") :
-        indice = 0
-    elif(c =="G") : 
-        indice = 1
-    else : 
-        indice = 2
-    for y in range (dim[0]) : 
-        for x in range(dim[1]) : 
-            rgbMoyenne = (M[y, x, 0] + M[y, x, 1] + M[y, x, 2])/3
-            print(rgbMoyenne)
-            pixel_intensite = M[y, x, indice] / rgbMoyenne
-            Mbinaire[y, x] = (rgbMoyenne > seuil_lum and pixel_intensite > intensite)
-    return Mbinaire 
 
-def colorStrongFilterv2(img : Image.Image, c : str, intensite = 0.65):
-    RGB = {'R': 2, 'G' : 1, 'B' : 0}
-    M = np.array(img)
-    moyennePixels = (M[:, :, 0] + M[:, :, 1] + M[:, :, 2])/3
-    pixel_intensite = M[:, :, RGB[c]]/moyennePixels
-    return (pixel_intensite > intensite)
-
-
-def colorStrongFilterv3(img : Image.Image, c : str, i1 : int, i2 : int):
+def colorStrongFilter(img : Image.Image, c : str, i1 : int, i2 : int) -> np.ndarray:
+    """
+    Fonction qui permet de mettre en évidence l'intensité d'une couleur (r, v ou b) dans une image en établissant deux seuils : un permettant d'évaluer la force de la couleur dans chaque pixel et l'autre la faiblesse des deux autres couleurs dans chaque pixel.
+    
+    Arguments :
+    -----------
+        (Image.Image) : l'image sur laquelle effectuer le traitement
+        (str) : couleur ('R', 'G', 'B')
+        (int) : seuil de force de la couleur choisie
+        (int) : seuil de faiblesse des deux autres composantes couleur
+    
+    Returns :
+    ---------
+        (np.ndarray) : tableau de booléens (True quand les seuils sont respectés, False quand ils ne le sont pas)
+    """
     M = np.array(img)
     RGB = {'R': 0, 'G' : 1, 'B' : 2}
-    cond1 = M[:, :, RGB[c]] > i1
-    del RGB[c]
-    moy = (M[:, :, list(RGB.values())[0]] + M[:, :, list(RGB.values())[1]])/2
-    cond2 = moy < i2
-    return np.logical_and(cond1, cond2)
+    cond1 = M[:, :, RGB[c]] > i1  # quels pixels sont forts dans la couleur cherchée ? 
+    del RGB[c] # on veut continuer à travailler seulement sur les deux couleurs restantes
+    moy = (M[:, :, list(RGB.values())[0]] + M[:, :, list(RGB.values())[1]])/2 # on fait une moyenne des deux
+    cond2 = moy < i2 # on cherche les pixels faibles en ces deux couleurs (niveau de faiblesse recherchée défini par le paramètre i2)
+    return np.logical_and(cond1, cond2) # on cherche les pixels satisfaisant les deux conditions à la fois
+
+
+def luminosite(img: Image.Image) -> float:
+    """renvoie la luminosité de l'image"""
+    imgTableau = np.array(img)
+    imgVert = imgTableau[:,:,1] * 1.0
+    imgBleu = imgTableau[:,:,2] * 1.0
+    imgRouge = imgTableau[:,:,0] * 1.0
+    imgFiltre = foreground_filter(img, 208)
+    return (np.mean(imgVert[imgFiltre]) + np.mean(imgBleu[imgFiltre]) + np.mean(imgRouge[imgFiltre]))/3
     
 
-def whiteness(img : Image.Image, power : int):
+def whiteness(img : Image.Image, power : int) -> np.ndarray :
+    """
+    Fonction qui renvoie un tableau de booléens dont chaque valeur vaut vrai si le pixel associé est blanc (par seuillage), False sinon
+    
+    Arguments :
+    -----------
+        (Image.Image) : image sur laquelle effectuer le traitement
+        (int) : intensité de blancheur qu'on souhaite extraire dans chaque pixel
+    
+    Returns :
+    ---------
+        (np.ndarrray) : tableau de booléens dont les valeurs valent True quand le pixel associé est blanc, False sinon
+    
+    """
     M = np.array(img)
-    return abs(M[:, :, 0] - M[:, :, 1] - M[:, :, 2]) > power
+    return abs(M[:, :, 0] - M[:, :, 1] - M[:, :, 2]) < power
+
+
+def flag(img: Image.Image) -> np.ndarray:
+    """
+    Returns a boolean numpy array which is true when the pixel belongs to the Croatian or Serbian flag and false if not
+    
+    Arguments:
+    -----------
+        (Image.Image) : the image to be processed
+        
+    Returns:
+    ---------
+        (np.ndarray) : a boolean numpy array with True values for pixels belonging to the Croatian or Serbian flag, False otherwise
+    """
+    croatian_colors = [
+        colorStrongFilter(img, 'R', 220, 80), # red
+        colorStrongFilter(img, 'G', 220, 80), # green
+        whiteness(img, 50) # white
+    ]
+    serbian_colors = [
+        colorStrongFilter(img, 'R', 220, 80), # red
+        colorStrongFilter(img, 'B', 220, 80), # blue
+        whiteness(img, 50) # white
+    ]
+    return np.logical_or.reduce(croatian_colors) | np.logical_or.reduce(serbian_colors)
+
     
 def axisCheck(img, y, x):
   
