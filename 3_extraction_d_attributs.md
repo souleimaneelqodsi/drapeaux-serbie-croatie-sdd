@@ -195,11 +195,6 @@ booléenne en sortie de `foreground_filter`. La fonction
 si une majorité de `True` est détectée. Voilà le résultat.
 
 ```{code-cell} ipython3
-blanc = [whiteness(img, 70) for img in sample]
-image_grid(blanc)
-```
-
-```{code-cell} ipython3
 image_grid([invert_if_light_background(foreground_redness_filter(img, theta=.6))
             for img in sample])
 ```
@@ -278,10 +273,6 @@ img
 que l'on affiche comme un nuage de points :
 
 ```{code-cell} ipython3
-image_grid([flag(img) for img in sample])
-```
-
-```{code-cell} ipython3
 plt.scatter(coordinates[:,1], -coordinates[:,0], marker="x");
 ```
 
@@ -306,6 +297,10 @@ plt.scatter(center[0], -center[1], 300, c='r', marker='+',linewidth=5);
 Ce n'est pas parfait: du fait des groupes de pixels à droite qui ont
 été détectées comme de l'avant plan, le centre calculé est plus à
 droite que souhaité. Mais cela reste un bon début.
+
+```{code-cell} ipython3
+image_grid([drapeau(img, 80, 80, 1.5, 1.25, 190, 15) for img in sample])
+```
 
 +++ {"user_expressions": []}
 
