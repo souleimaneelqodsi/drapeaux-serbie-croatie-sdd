@@ -44,7 +44,7 @@ classificateur. Les étapes seront:
 
 ### Import des bibliothèques
 
-```{code-cell}
+```{code-cell} ipython3
 import os, re
 from glob import glob as ls
 from PIL import Image
@@ -73,7 +73,7 @@ from intro_science_donnees import *
 
 Nous chargeons les images prétraitées dans la feuille précédente :
 
-```{code-cell}
+```{code-cell} ipython3
 dataset_dir = 'clean_data'
 
 images = load_images(dataset_dir, "*.png")
@@ -83,7 +83,7 @@ images = load_images(dataset_dir, "*.png")
 
 Vérifions l'import en affichant les 20 premières images :
 
-```{code-cell}
+```{code-cell} ipython3
 image_grid(images[:20])
 ```
 
@@ -92,7 +92,7 @@ image_grid(images[:20])
 Pour mettre en œuvre des classificateurs, nous pouvons repartir des
 attributs extraits dans la fiche précédente :
 
-```{code-cell}
+```{code-cell} ipython3
 df_features = pd.read_csv('features_data.csv', index_col=0)
 df_features
 ```
@@ -101,7 +101,7 @@ df_features
 
 On vérifie que nos données sont normalisées :
 
-```{code-cell}
+```{code-cell} ipython3
 df_features.describe()
 ```
 
@@ -116,7 +116,7 @@ Nous allons à présent importer les classificateurs depuis la librairie
 - les noms des classificateurs dans la variable `model_name`;
 - les classificateurs eux-mêmes dans la variable `model_list`.
 
-```{code-cell}
+```{code-cell} ipython3
 from sklearn.neural_network import MLPClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
@@ -167,7 +167,7 @@ de données (attributs de l'analyse de variance univiarié). La fonction
 `systematic_model_experiment(data_df, model_name, model_list,
 sklearn_metric)` permet de réaliser ces tests systématiques:
 
-```{code-cell}
+```{code-cell} ipython3
 from sklearn.metrics import balanced_accuracy_score as sklearn_metric
 compar_results = systematic_model_experiment(df_features, model_name, model_list, sklearn_metric)
 compar_results.style.set_precision(2).background_gradient(cmap='Blues')
@@ -178,7 +178,7 @@ compar_results.style.set_precision(2).background_gradient(cmap='Blues')
 **Exercice:** Quelle méthode obtient les meilleures performances de
 test?
 
-```{code-cell}
+```{code-cell} ipython3
 model_list[compar_results.perf_te.argmax()]
 ```
 
@@ -187,7 +187,7 @@ model_list[compar_results.perf_te.argmax()]
 On peut également représenter les performances dans un graphique en
 barres:
 
-```{code-cell}
+```{code-cell} ipython3
 compar_results[['perf_tr', 'perf_te']].plot.bar()
 plt.ylim(0.5, 1)
 plt.ylabel(sklearn_metric.__name__);
@@ -225,7 +225,7 @@ cela nous allons:
    sous-appris, tandis que ceux dont la performance d'entraînement est
    **supérieure à la médiane** ont sur-appris.
 
-```{code-cell}
+```{code-cell} ipython3
 analyze_model_experiments(compar_results)
 ```
 
@@ -257,7 +257,7 @@ les méthodes `fit`, `predict`, `predict_proba` et `score` comme
 faisant la synthèse des résultats des classificateurs contenus dans
 `self.model_list`.
 
-```{code-cell}
+```{code-cell} ipython3
 class ClassifierCommittee():
     def __init__(self, model_list):
         self.model_list = model_list
@@ -294,11 +294,11 @@ class ClassifierCommittee():
 
 Quelles seraient les performances d'un tel classificateur?
 
-```{code-cell}
+```{code-cell} ipython3
 commitee = ClassifierCommittee(model_list)
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 perf_tr, std_tr, perf_te, std_te = df_cross_validate(df_features, commitee, sklearn_metric)
 print(perf_te, std_te)
 ```
@@ -358,7 +358,7 @@ où $x_i$ est la probabilité de classification sur la classe $i$.
 On récupère alors les prédictions de nos images pour les 10
 classificateurs :
 
-```{code-cell}
+```{code-cell} ipython3
 X = df_features.iloc[:, :-1].to_numpy()
 Y = df_features.iloc[:, -1].to_numpy()
 commitee.fit(X, Y)
@@ -372,7 +372,7 @@ La dimension de notre matrice de prédiction est donc: `(nombre
 d'images, nombre de classificateur, nombre de classess)`. Appliquons
 l'entropie pour chaque prédiction de chaque classificateur :
 
-```{code-cell}
+```{code-cell} ipython3
 from scipy.stats import entropy
 entropies_per_classifier = entropy(np.swapaxes(prediction_probabilities, 0, 2))
 ```
@@ -381,7 +381,7 @@ entropies_per_classifier = entropy(np.swapaxes(prediction_probabilities, 0, 2))
 
 On moyenne les entropies d'une image entre les classificateurs :
 
-```{code-cell}
+```{code-cell} ipython3
 entropies = np.mean(entropies_per_classifier, axis = 0)
 ```
 
@@ -391,13 +391,13 @@ Puis on ajoute ces valeurs dans une table que l'on trie par ordre
 décroissant d'entropie. Les images avec l'entropie la plus grande sont
 les plus incertaines et donc les plus informatives pour le modèle :
 
-```{code-cell}
+```{code-cell} ipython3
 df_uncertainty = pd.DataFrame({"images" : images,
                            "entropy" : entropies})
 df_uncertainty = df_uncertainty.sort_values(by=['entropy'],ascending=False)
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 df_uncertainty.style.background_gradient(cmap='RdYlGn_r')
 ```
 
@@ -408,7 +408,7 @@ classificateurs, selon cette mesure aléatorique de l'incertitude. Ces
 images nous donne une idée de l'ambiguité intrinsèque de notre base de
 données.
 
-```{code-cell}
+```{code-cell} ipython3
 uncertain_aleatoric_images = df_uncertainty['images'].tolist()
 image_grid(uncertain_aleatoric_images[:10])
 ```
@@ -418,7 +418,7 @@ image_grid(uncertain_aleatoric_images[:10])
 Affichons maintenant les 10 images les **moins incertaines** pour
 notre comité de classificateurs :
 
-```{code-cell}
+```{code-cell} ipython3
 image_grid(uncertain_aleatoric_images[-10:])
 ```
 
@@ -437,7 +437,7 @@ VOTRE RÉPONSE ICI
 Pour l'incertitude épistémique, on va simplement moyenner entre les
 classificateurs les écarts types entre les classes :
 
-```{code-cell}
+```{code-cell} ipython3
 # std entre les classses
 epistemic_uncertainty = np.std(prediction_probabilities, axis = 2)
 print(epistemic_uncertainty.shape)
@@ -451,13 +451,13 @@ print(epistemic_uncertainty.shape)
 On ajoute cette mesure au tableau puis on classe les images par ordre
 décroissant :
 
-```{code-cell}
+```{code-cell} ipython3
 df_uncertainty["std_epistemic"] = epistemic_uncertainty
 df_uncertainty = df_uncertainty.sort_values(by=['std_epistemic'],ascending=False)
 df_uncertainty.style.background_gradient(cmap='RdYlGn_r')
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 df_uncertainty.corr()
 ```
 
@@ -467,13 +467,13 @@ Les valeurs d'incertitude aléatorique (entropie) et épistémiques (std)
 ne semblent pas très corrélées. Affichons les images les plus
 incertaines selon cette mesure d'incertitude épistémique :
 
-```{code-cell}
+```{code-cell} ipython3
 uncertain_epistemic_images = df_uncertainty['images'].tolist()
 # les images où les classificateurs sont le moins d'accord
 image_grid(uncertain_epistemic_images[:10])
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 # les images où les classificateurs sont le plus d'accord
 image_grid(uncertain_epistemic_images[-10:])
 ```
@@ -554,7 +554,7 @@ différentes (dont des animaux, des objets de la vie courante etc.).
 Depuis la librairie `keras`, importons le modèle pré-entraîné sur la
 base de donnée `imagenet` :
 
-```{code-cell}
+```{code-cell} ipython3
 import tensorflow as tf
 tf.config.run_functions_eagerly(True)
 
@@ -564,7 +564,7 @@ mobilenet = tf.keras.applications.MobileNet(include_top=False, weights='imagenet
 Observons l'architecture en couches de ce réseau de neurones; chaque
 ligne ci-dessous décrit brièvement l'une des couches successives :
 
-```{code-cell}
+```{code-cell} ipython3
 mobilenet.summary()
 ```
 
@@ -592,7 +592,7 @@ plus petit.
 
 On commence par geler les poids du réseau `mobilenet` :
 
-```{code-cell}
+```{code-cell} ipython3
 for layer in mobilenet.layers:
     layer.trainable=False
 ```
@@ -600,13 +600,13 @@ for layer in mobilenet.layers:
 Vérifiez que tous les paramètres de `mobilenet` sont à présent
 non-entraînables :
 
-```{code-cell}
+```{code-cell} ipython3
 mobilenet.summary()
 ```
 
 On va à présent ajouter de nouvelles couches entraînables de neurones :
 
-```{code-cell}
+```{code-cell} ipython3
 from tensorflow import keras
 from keras.models import Model
 from keras.layers import Dense,GlobalAveragePooling2D
@@ -625,7 +625,7 @@ myneuralnet = keras.Sequential(
 Configurons le réseau `mobilenet` pour prendre en entrée des images de
 taille `(32,32,3)`:
 
-```{code-cell}
+```{code-cell} ipython3
 myneuralnet.build((None,32,32,3))
 myneuralnet.summary()
 ```
@@ -641,7 +641,7 @@ VOTRE RÉPONSE ICI
 
 Chargeons nos données recentrées et recadrées de taille 32x32 :
 
-```{code-cell}
+```{code-cell} ipython3
 df_clean = pd.read_csv('clean_data.csv', index_col=0)  # chargement du fichier dans le notebook
 df_clean
 ```
@@ -652,7 +652,7 @@ On souhaite avoir une variable `X` de type `np.ndarray` de taille
 `(491, 32, 32, 3)` c'est à dire `(nombre d'images, largeur, hauteur,
 nombre de couches de couleurs)` :
 
-```{code-cell}
+```{code-cell} ipython3
 X = np.array(df_clean.drop(['class'], axis=1)).reshape((491, 32, 32, 3))
 ```
 
@@ -665,7 +665,7 @@ d'images, nombre de classes)` tel que `y_onehot[i,j]==1` si la i-ème
 ligne vaut `(1,0)` si le i-ème fruit est une pomme, et `(0,1)` si
 c'est une banane :
 
-```{code-cell}
+```{code-cell} ipython3
 y = np.array(df_clean["class"])
 classes = np.unique(y)
 class_to_class_number = { cls: number for number, cls in enumerate(classes) }
@@ -681,7 +681,7 @@ coût*** qui vont permettre d'optimiser les paramètres de nos
 neurones. Les poids des neurones vont être optimisés pour ***minimiser
 la fonction de coût*** (*loss*) :
 
-```{code-cell}
+```{code-cell} ipython3
 opt = keras.optimizers.Adam(learning_rate=0.01)
 myneuralnet.compile(loss='categorical_crossentropy', metrics=["accuracy"], optimizer=opt)
 ```
@@ -689,7 +689,7 @@ myneuralnet.compile(loss='categorical_crossentropy', metrics=["accuracy"], optim
 Avant de pouvoir entraîner notre réseau, on va d'abord diviser nos
 données en deux: les données d'entraînement et les données de test :
 
-```{code-cell}
+```{code-cell} ipython3
 test = np.array(y == 1, dtype = int)
 X_train = np.concatenate((X[:165], X[333:333+ 79]), axis = 0)
 y_train = np.concatenate((y_onehot[:165], y_onehot[333:333+ 79]), axis = 0)
@@ -704,7 +704,7 @@ On peut finalement entraîner notre réseau de neurone !
 cellule ci-dessous est désactivée par défaut. Mettez en commentaire la
 première ligne pour lancer le calcul.
 
-```{code-cell}
+```{code-cell} ipython3
 %%script echo cellule désactivée
 
 from sklearn.model_selection import StratifiedKFold
@@ -742,7 +742,7 @@ print(scores.mean())
 Afficher les valeurs d'accuracy au fur et à mesure des itérations
 d'optimisations :
 
-```{code-cell}
+```{code-cell} ipython3
 %%script echo cellule désactivée
 
 plt.plot(scores)

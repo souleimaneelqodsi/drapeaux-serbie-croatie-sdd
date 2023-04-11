@@ -5,13 +5,6 @@ from PIL import Image, ExifTags  # type: ignore
 from sklearn.model_selection import StratifiedShuffleSplit  # type: ignore
 import sys
 
-import scipy
-from skimage.morphology import binary_erosion, binary_dilation, disk
-from skimage.filters import median
-from skimage.segmentation import clear_border
-from skimage.measure import label, regionprops
-from skimage.color import label2rgb
-
 def crop_image(img: Image.Image, crop_size: int = 32) -> Image.Image:
     """Crop a PIL image to crop_size x crop_size."""
     # First determine the bounding box
@@ -428,61 +421,28 @@ def colorStrongFilter(img : Image.Image, c : str, i1 : int, i2 : int) -> np.ndar
     moy = (M[:, :, list(RGB.values())[0]] + M[:, :, list(RGB.values())[1]])/2 # on fait une moyenne des deux
     cond2 = moy < i2 # on cherche les pixels faibles en ces deux couleurs (niveau de faiblesse recherchée défini par le paramètre i2)
     return np.logical_and(cond1, cond2) # on cherche les pixels satisfaisant les deux conditions à la fois
-    
-
-def whiteness(img : Image.Image, power : int, variance : int) -> np.ndarray:
+  
+def whiteness(img: Image.Image, seuil: int) -> np.ndarray:
     """
-    Fonction qui retourne un tableau de booléens représentant les pixels d'une image qui sont considérés comme "blancs".
-    Les pixels sont considérés blancs si :
-    - leur intensité dans les trois canaux de couleur est supérieure à une valeur de seuil 'power'
-    - leur différence d'intensité entre les canaux Rouge et Vert, Rouge et Bleu, et Bleu et Vert est inférieure à une valeur de seuil 'variance'
-    
-    Arguments :
-    -----------
-        (Image.Image) : l'image à traiter
-        (int) : seuil de puissance de la couleur pour considérer un pixel comme "blanc"
-        (int) : seuil de différence d'intensité entre les canaux Rouge et Vert, Rouge et Bleu, et Bleu et Vert pour considérer un pixel comme "blanc"
-    
-    Returns :
-    ---------
-        (np.ndarray) : tableau de booléens (True pour les pixels blancs, False pour les autres)
+    Calcule un masque de pixels blancs pour une image donnée, en utilisant une méthode de seuillage.
+
+    Args:
+        img (PIL.Image.Image): L'image à traiter.
+        seuil (int): La valeur de seuil pour le seuillage. Tous les pixels dont la valeur est supérieure à ce seuil seront considérés comme blancs.
+
+    Returns:
+        np.ndarray: Un masque de pixels blancs, représenté par un tableau numpy de dimensions (hauteur, largeur) avec des valeurs booléennes.
+        
     """
-    # Conversion de l'image en tableau numpy
-    M = np.array(img)
-    
-    # Création d'un tableau de zéros de même dimension que l'image
-    dim = M.shape
-    MBlack = np.zeros((dim[0], dim[1]))
-    
-    # Parcours de tous les pixels de l'image
-    for y in range (dim[0]): 
-        for x in range (dim[1]):
-            
-            # Condition pour considérer un pixel comme "blanc"
-            if (
-                (M[y, x, 0] > power)
-                and (M[y, x, 1] > power)
-                and (M[y, x, 2] > power)
-                and (
-                    M[y, x, 0] - M[y, x, 1] < variance
-                    or M[y, x, 0] - M[y, x, 1] > 256 - variance
-                )
-                and (
-                    M[y, x, 0] - M[y, x, 2] < variance
-                    or M[y, x, 0] - M[y, x, 2] > 256 - variance
-                )
-                and (
-                    M[y, x, 2] - M[y, x, 1] < variance
-                    or M[y, x, 2] - M[y, x, 1] > 256 - variance
-                )
-            ):
-                # Si la condition est vraie, on marque le pixel comme "blanc"
-                MBlack[y, x] = 1
-    
-    return MBlack
+    # Conversion de l'image en un tableau numpy
+    arr = np.asarray(img)
+    # Création d'un tableau de seuil avec la même taille que l'image
+    threshold = np.full(arr.shape, seuil, dtype=arr.dtype)
+    # Calcul du masque de pixels blancs en comparant chaque canal de couleur avec le seuil
+    mask = np.all(arr > threshold, axis=2)
+    return mask
 
-
-def axisCheck(img: np.ndarray, y: int, x: int) -> int:
+def axisCheck(img: np.ndarray, y: int, x: int) -> tuple:
     """
     Fonction qui compte le nombre de pixels blancs ("True") sur les axes verticaux et horizontaux passant par un pixel donné d'une image binaire.
 
@@ -495,112 +455,204 @@ def axisCheck(img: np.ndarray, y: int, x: int) -> int:
 
     Returns :
     ---------
-        trueCount : int
-            Nombre de pixels blancs ("True") sur les axes verticaux et horizontaux passant par le pixel de coordonnées (y, x).
+        trueCountY : int 
+            Nombre de pixels blancs ("True") sur l'axe vertical passant par le pixel de coordonnées (y, x).
+        trueCountX : int 
+            Nombre de pixels blancs ("True") sur l'axe horizontal passant par le pixel de coordonnées (y, x).
     """
     M = np.array(img)
     dim = M.shape
-    trueCount = sum(1 for i in range(dim[1]) if M[i, x])
-    for m in range(dim[0]):  # Axe horizontal
-        if M[y, m]:
-            trueCount += 1
+    trueCountX = 0
+    trueCountY = 0
+    for i in range(dim[0]): #  Axe vertical
+        if M[i, x] :
+            trueCountY += 1
+    trueCountX = sum([1 for i in M[y] if i])
+            
+    return (trueCountY, trueCountX)
 
-    return trueCount
 
-
-def centerFinder(img: Image.Image, precision: int = 2) -> tuple:
+def centerFinder(img: Image.Image, center : int, precision: int = 10) -> int:
     """
-    Finds the center of an object in a binary image and gives the size of the image after being cropped.
+    Cherche la zone a conserver lors du troncage a partir d'un pixel qui lui sert de centre.
 
     Arguments:
     ----------
     img : Image.Image
-        Binary image after filtering out what is not "relevant" for the search (background, everything that is not a flag).
+        Image en binaire
+    center : int
+        le centre de l'image 
     precision : int, optional
-        Indicates the crop precision: if counter=1 and we are looking for a value for crop1, if axisCheck returns trueCount=1, 
-        then it is sufficient to give a value to crop1, which counts as imprecise. Default value is 2.
+        indique la precision du troncage, utile pour déterminer les extremités de la zone à conserver lors du troncage
 
     Returns:
     --------
-    center : List[float]
-        Coordinates of the center of the object studied.
     radius : int
-        Useful value for the function crop_around_center. Describes the size that the image should have after being cropped.
+        Le rayon de la zone qu'on va conserver lors du troncage
     """
-    # We try to define a box that will enclose the object; we will then crop the contour of this box
-    M = whiteness(img, 200)
-    crop1 = [0, 0] 
-    crop2 = [0, 0]
+# On définit une zone qui va conserver le drapeau lors du troncage
+    M = np.array(img)
+    crop1 = [-1, -1] 
+    crop2 = [-1, -1]
     dim = M.shape
 
-    signal = 0  # Signal to stop a loop
-    for y in range(dim[1]):
-        for x in range(dim[0]):
+    for y in range(dim[0]) : 
+        for x in range(dim[1]) :
             result = axisCheck(M, y, x)
-            if result >= precision:
-                crop1 = [y, x]
-                signal = 1
+            if result[0] >= precision: #Résultat sur l'axe vertical
+                crop1[0] = y
+            if result[1] >= precision :
+                crop1[1] = x
+            if -1 not in crop2 :
                 break
-        if signal:
-            break 
-    signal = 0 
-    for y in range(dim[1], 0, -1):
-        for x in range(dim[0], 0, -1):
+    for y in range(dim[0] - 1, 0, -1) : 
+        for x in range(dim[1] - 1, 0, -1) :
             result = axisCheck(M, y, x)
-            if result >= precision:
-                crop2 = [y, x]
-                signal = 1
-                break
-        if signal:
-            break 
+            if result[0] >= precision: #Résultat sur l'axe vertical
+                crop2[0] = y
+            if result[1] >= precision :
+                crop2[1] = x
+            if -1 not in crop2 : 
+                break           
+    if -1 in crop2 or -1 in crop1 :  #L'image est vide / on n'a pas réussi à définir une boîte
+        return 0
+    # Les 2 pixels qu'on a trouvé vont définir l'air de la boîte
+    radius = max([crop2[1] - crop1[1], crop2[0] - crop1[0]]) // 2
+    radius -= ((center[1] + radius) % (dim[1] - 1)) + ((center[0] + radius) % (dim[0] - 1)) #Vérifie si le rayon de la boîte ne va dépasser l'image en partant du pointer "center".
+    if center[1] - radius < 0 :
+        radius += abs(center[1] - radius)
+    if center[0] - radius < 0 :
+        radius += abs(center[0] - radius)
+    
+    return abs(radius) // 1
 
-    # We have found the coordinates of the 2 pixels defining the box that will enclose the object
-    center = [(crop1[1] + crop2[1]) / 2 // 1, (crop1[0] + crop2[0]) / 2 // 1]
-    radius = max([crop2[1] - crop1[1], crop2[0] - crop1[0]]) / 2 // 1 + 10  # 10 pixels of "safety"
-    if center[0] + radius >= dim[1]:
-        radius -= abs(radius - dim[1])
-    if center[1] + radius >= dim[0]:
-        radius -= abs(radius - dim[0])
 
-    return center, radius
 
-def blockCreation(img, yKernel, xKernel, blockSize):
+def blockCreation(img : Image.Image, yKernel : int, xKernel : int, blockSize : int) -> list:
+    """Fonction qui crée un bloc de taille blockSize autour d'un pixel noyau, et le stocke dans un tableau
+    
+    Arguments :
+    -----------
+        (Image.Image) : image
+        (int) : coordonéee en abscisse du noyau
+        (int) : coordonnée en ordonnée du noyau
+        (int) : taille du bloc souhaitée
+    
+    
+    Returns :
+    ---------
+        (list) : bloc de taille blockSize * blockSize centré autour du kernel
+    """
     M = np.array(img)
-    block = np.zeros((blockSize**2, 3), dtype=np.uint8)
+    kernel = []
     rayonBlock = blockSize//2
-    y, x = np.indices((blockSize, blockSize)) - rayonBlock
-    y += yKernel
-    x += xKernel
-    valid = (y >= 0) & (y < M.shape[0]) & (x >= 0) & (x < M.shape[1])
-    blockIndex = np.arange(blockSize**2)[valid.ravel()]
-    y, x = y[valid], x[valid]
-    block[blockIndex] = M[y, x]
-    return block
+    for y in range (yKernel - rayonBlock, yKernel + rayonBlock + 1, 1) : 
+        for x in range(xKernel - rayonBlock, xKernel + rayonBlock + 1 , 1) : 
+            if y < 0: 
+                break
+            if x < 0:
+                continue
+            if x >= M.shape[1]:
+                break
+            if y >= M.shape[0] :
+                break
+            kernel.append(M[y , x])
+    return kernel
 
 
-def appartenance(img, y, x, blockSize, rougeIntensite, bleuIntensite, coeffRouge, coeffBleu):
+def appartenance(img : Image.Image, y : int, x : int, blockSize : int, rougeIntensite : int, bleuIntensite : int, coeffRouge : int, coeffBleu : int) -> np.ndarray:
+    """Selon les données trouvées dans le bloc généré par blockCreation, la fonction permet de déterminer si le pixel entré en paramètres appartient au drapeau ou non à travers un système de score
+    
+    Arguments :
+    -----------
+        (Image.Image) : image
+        (int) : coordonée en abscisse du pixel
+        (int) : coordonnée en ordonnée du pixel
+        (int) : taille du bloc utilisée pour effectuer la recherche (influe sur la performance de la fonction)
+        (int) : intensité de rougueur recherchée dans le bloc
+        (int) intensité de bleuissement recherchée dans le bloc
+        (int) : coefficient i permettant de déterminer si le rouge est i-ème fois plus grand que le vert et le bleu
+        (int) : coefficient i permettant de déterminer si le bleu est i-ème fois plus grand que le rouge et le vert
+    
+    Returns :
+    ---------
+        (bool) : booléen valant True quand le pixel a un bon score, False sinon
+        """
     block = blockCreation(img, y, x, blockSize)
     score = 0
-    rouge = block[:, 0]
-    vert = block[:, 1]
-    bleu = block[:, 2]
-    rougeMask = (rouge > rougeIntensite)
-    bleuMask = (bleu > bleuIntensite)
-    score += np.sum((bleuMask & (rouge * coeffBleu < bleu) & (vert * coeffBleu < bleu)).astype(float))
-    score += np.sum((rougeMask & (bleu * coeffRouge < rouge) & (vert * coeffRouge < rouge)).astype(float))
-    score /= len(block) + np.finfo(float).eps
+    for i in block: 
+        if i[0] > rougeIntensite:
+            operation1 = int(i[2] * coeffRouge)
+            operation2 = int(i[1] * coeffRouge)
+            if operation1 < i[0] and operation2 < i[0] :
+                score+= 1
+            else : 
+                score += 0.2
+        if i[2] > bleuIntensite: 
+            operation1 = int(i[0] * coeffBleu)
+            operation2 = int(i[1] * coeffBleu)
+            if operation1 < i[2] and operation2 < i[2] : 
+                score += 1
+            else : 
+                score += 0.2
+    score /= len(block) + sys.float_info.epsilon
     return score >= 0.5
 
 
-def drapeau(img, rougeIntensite, bleuIntensite, coeffRouge, coeffBleu, power, variance):
+def drapeau(img : Image.Image, rougeIntensite : int, bleuIntensite : int, coeffRouge : int, coeffBleu : int, seuil : int) -> np.ndarray: 
+    """
+    Fonction renvoyant un tableau de booléens valant True si le pixel associé appartient à un drapeau serbe/croate, False sinon, à partir des données de rougeur, bleuissement et blancheur du drapeau fournies par les fonctions précédemment écrites
+    
+    Arguments :
+    -----------
+        (Image.Image) : l'image
+        (int) : intensité de rouge fournie à la fonction appartenance
+        (int) : intensité de bleu fournie à la fonction appartenance
+        (int) : coefficient de rouge fourni à la fonction appartenance
+        (int) : coefficient de bleu fourni à la fonction appartenance
+        (int) : seuil de différence d'intensité fourni à la fonction whiteness
+
+    Returns :
+    ---------
+        (np.ndarray) : tableau de booléens valant True si le pixel associé appartient à un drapeau serbe/croate, False sinon
+    """
     M = np.array(img)
     dim = M.shape
-    isDrapeau = np.zeros((dim[0], dim[1]), dtype=bool)
-    blockSize = dim[0] // 64
-    for y in range(dim[0]):
-        for x in range(dim[1]):
-            if appartenance(img, y, x, blockSize, rougeIntensite, bleuIntensite, coeffRouge, coeffBleu):
-                isDrapeau[y, x] = True
-    isDrapeau = scipy.ndimage.median_filter(isDrapeau, size=power)
-    isDrapeau = binary_erosion(isDrapeau, selem=disk(variance))
-    return isDrapeau
+    isDrapeau = np.zeros((dim[0], dim[1]))
+    blockSize = 3
+    for y in range(dim[0]) :
+        for x in range(dim[1]) : 
+            isDrapeau[y, x] = appartenance(img, y, x, blockSize, rougeIntensite, bleuIntensite, coeffRouge, coeffBleu)
+    print("Opération effectuée")
+    return np.logical_or(isDrapeau, whiteness(img, seuil))
+
+def crop_flag(img, rougeIntensite=80, bleuIntensite=80, coeffRouge=1.5, coeffBleu=1.25, seuil=200, blockSize=4):
+    """
+    Crop the image around the Serbian/Croatian flag.
+    
+    Args:
+        img (PIL.Image.Image): The image to crop.
+        rougeIntensite (int): The intensity of redness to look for in the flag. Default is 160.
+        bleuIntensite (int): The intensity of blueness to look for in the flag. Default is 160.
+        coeffRouge (int): The coefficient to determine if the red is i times greater than green and blue. Default is 1.
+        coeffBleu (int): The coefficient to determine if the blue is i times greater than red and green. Default is 1.
+        seuil (int): The threshold value to use for the segmentation. Default is 210.
+        blockSize (int): The size of the block to use for the search. Default is 11.
+        
+    Returns:
+        PIL.Image.Image: The cropped image.
+    """
+    # Create the binary mask
+    mask = drapeau(img, rougeIntensite, bleuIntensite, coeffRouge, coeffBleu, seuil)
+    
+    # Find the indices of the True values
+    indices = np.where(mask)
+    
+    # Crop the image around the flag
+    left = min(indices[1])
+    right = max(indices[1])
+    top = min(indices[0])
+    bottom = max(indices[0])
+    
+    cropped = img.crop((left, top, right, bottom))
+    return cropped

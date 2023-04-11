@@ -116,7 +116,7 @@ Comme le jeu de données peut être gros, nous extrayons un échantillon
 de dix pommes et dix bananes pour expérimenter et visualiser :
 
 ```{code-cell} ipython3
-sample = list(images[:10]) + list(images[-10:])
+sample = list(images[:12]) + list(images[-11:])
 ```
 
 ```{code-cell} ipython3
@@ -299,7 +299,11 @@ Ce n'est pas parfait: du fait des groupes de pixels à droite qui ont
 droite que souhaité. Mais cela reste un bon début.
 
 ```{code-cell} ipython3
-image_grid([drapeau(img, 80, 80, 1.5, 1.25, 190, 15) for img in sample])
+---
+jupyter:
+  outputs_hidden: true
+---
+image_grid([drapeau(img, 80, 80, 1.5, 1.25, 190) for img in sample])
 ```
 
 +++ {"user_expressions": []}
@@ -322,10 +326,18 @@ crop_image(img)
 crop_around_center(img, center)
 ```
 
+```{code-cell} ipython3
+image_grid([crop_flag(img) for img in sample])
+```
+
 +++ {"user_expressions": []}
 
 On constate que le recadrage sur le fruit est amélioré, même si pas
 encore parfait.
+
+```{code-cell} ipython3
+image_grid([adaptive_threshold_segmentation(img) for img in sample])
+```
 
 +++ {"user_expressions": []}
 
@@ -400,7 +412,7 @@ prétraitées et on les ajoute à notre table `performances` :
 
 ```{code-cell} ipython3
 # Validation croisée (LENT)
-p_tr, s_tr, p_te, s_te = df_cross_validate(df_clean, sklearn_model, sklearn_metric)
+p_tr, s_tr, p_te, s_te = df_cross_validate(df_clean.fillna(0), sklearn_model, sklearn_metric)
 metric_name = sklearn_metric.__name__.upper()
 print("AVERAGE TRAINING {0:s} +- STD: {1:.2f} +- {2:.2f}".format(metric_name, p_tr, s_tr))
 print("AVERAGE TEST {0:s} +- STD: {1:.2f} +- {2:.2f}".format(metric_name, p_te, s_te))
@@ -487,7 +499,7 @@ différence `R-G` :
 
 ```{code-cell} ipython3
 image_grid([redness_filter(img)
-            for img in clean_sample])
+            for img in sample])
 ```
 
 +++ {"deletable": false, "nbgrader": {"cell_type": "markdown", "checksum": "de257da85939f2134e56d5f7e043e9df", "grade": true, "grade_id": "cell-2ba20f803e981265", "locked": false, "points": 0, "schema_version": 3, "solution": true, "task": false}, "user_expressions": []}
