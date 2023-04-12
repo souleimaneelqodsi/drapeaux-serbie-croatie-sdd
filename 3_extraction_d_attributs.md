@@ -105,9 +105,7 @@ pommes et les bananes, puis le vôtre.
 
 ```{code-cell} ipython3
 #dataset_dir = os.path.join(data.dir, 'ApplesAndBananas')
-dataset_dir = 'data'
-
-images = load_images(dataset_dir, "*.jpg")
+images = load_images('data', "*.jpg")
 ```
 
 +++ {"user_expressions": []}
@@ -116,7 +114,7 @@ Comme le jeu de données peut être gros, nous extrayons un échantillon
 de dix pommes et dix bananes pour expérimenter et visualiser :
 
 ```{code-cell} ipython3
-sample = list(images[:12]) + list(images[-11:])
+sample = list(images[:10]) + list(images[-10:])
 ```
 
 ```{code-cell} ipython3
@@ -224,10 +222,13 @@ plan: <a name="choix_extraction"></a>
 
 ```{code-cell} ipython3
 def my_foreground_filter(img):
-    foreground = foreground_redness_filter(img, theta=.6)
-    foreground = invert_if_light_background(foreground)
+    foreground = drapeau(img, 80, 80, 1.5, 1.25, 190)
     foreground = scipy.ndimage.gaussian_filter(foreground, sigma=.2)
     return foreground
+```
+
+```{code-cell} ipython3
+plt.imshow(my_foreground_filter(images[0]))
 ```
 
 +++ {"user_expressions": []}
@@ -298,14 +299,6 @@ Ce n'est pas parfait: du fait des groupes de pixels à droite qui ont
 été détectées comme de l'avant plan, le centre calculé est plus à
 droite que souhaité. Mais cela reste un bon début.
 
-```{code-cell} ipython3
----
-jupyter:
-  outputs_hidden: true
----
-image_grid([drapeau(img, 80, 80, 1.5, 1.25, 190) for img in sample])
-```
-
 +++ {"user_expressions": []}
 
 ### Recadrage
@@ -319,25 +312,17 @@ cette fonction par rapport à l'ancienne fonction `crop_image` de la
 semaine précédente :
 
 ```{code-cell} ipython3
-crop_image(img) 
+cropped = [crop_flag(img) for img in sample]
 ```
 
 ```{code-cell} ipython3
-crop_around_center(img, center)
-```
-
-```{code-cell} ipython3
-image_grid([crop_flag(img) for img in sample])
+image_grid(cropped)
 ```
 
 +++ {"user_expressions": []}
 
 On constate que le recadrage sur le fruit est amélioré, même si pas
 encore parfait.
-
-```{code-cell} ipython3
-image_grid([adaptive_threshold_segmentation(img) for img in sample])
-```
 
 +++ {"user_expressions": []}
 
@@ -368,7 +353,7 @@ def my_preprocessing(img):
         center = (width/2, height/2)
     else:
         center = (np.mean(coordinates[:, 1]), np.mean(coordinates[:, 0]))
-    img = crop_around_center(img, center)
+    img = crop_flag(img)
     return img
 ```
 
@@ -382,11 +367,7 @@ Appliquons le prétraitement à toutes les images :
 
 ```{code-cell} ipython3
 clean_images = images.apply(my_preprocessing)
-clean_sample = list(clean_images[:10]) + list(clean_images[-10:])
-```
-
-```{code-cell} ipython3
-image_grid(clean_sample)
+image_grid(clean_images)
 ```
 
 +++ {"user_expressions": []}
@@ -401,8 +382,10 @@ représentations en pixels, regroupées dans une table:
 ```{code-cell} ipython3
 # conversion
 df_clean = clean_images.apply(image_to_series)
+
 # ajout des étiquettes
-df_clean['class'] = df_clean.index.map(lambda name: 1 if name[0] == 'a' else -1)
+df_clean['class'] = images.index.map(lambda name: 1 if name[0] == 'a' else -1)
+df_clean
 ```
 
 +++ {"user_expressions": []}
@@ -508,7 +491,7 @@ image_grid([redness_filter(img)
 resp. sombres? Pourquoi le fond n'apparaît-il pas toujours avec la
 même clarté?
 
-VOTRE RÉPONSE ICI
+Les zones claires correspondent aux zones avec un rouge accentué, et une zone sombre correspondent aux zones avec un niveau de rouge faible. Le fond n´apparait pas toujour avec la même clarté car le fond n´est pas toujours blanc.
 
 +++ {"user_expressions": []}
 
@@ -526,6 +509,11 @@ image_grid([difference_filter(img)
 
 Pour d'autres idées de mesures sur les couleurs, consulter [cette page
 wikipédia](https://en.wikipedia.org/wiki/HSL_and_HSV).
+
+```{code-cell} ipython3
+yellow = [yellowness_mask(img) for img in sample]
+image_grid(yellow)
+```
 
 +++ {"user_expressions": []}
 
@@ -587,13 +575,17 @@ Ainsi que trois autres attributs sur la forme:
 6. `surface` : nombre de pixels `True` après avoir extrait la forme.
 
 ```{code-cell} ipython3
-df_features = pd.DataFrame({'redness': clean_images.apply(redness),
-                            'greenness': clean_images.apply(greenness),
-                            'blueness': clean_images.apply(blueness),
-                            'elongation': clean_images.apply(elongation),
-                            'perimeter': clean_images.apply(perimeter),
-                            'surface': clean_images.apply(surface)})
-df_features
+foreground = [my_foreground_filter(img) for img in clean_images]
+dataScore = [(np.mean(np.argwhere(img)[:, 1]), np.mean(np.argwhere(img)[:, 0])) for img in foreground]
+
+df_features = pd.DataFrame({
+                            'redness' : [redness(img) for img in clean_images],
+                            'yellowness' : [yellowness(img) for img in clean_images],
+                            'blueness' : [blueness(img) for img in clean_images],
+                            'midBarScore' : [analyseCentre(clean_images[i], dataScore[i]) for i in range(len(clean_images))],
+                            'bottomBarAnalysis' : [discriminant(clean_images[i], dataScore[i]) for i in range(len(clean_images))]
+})
+df_features 
 ```
 
 +++ {"user_expressions": []}
@@ -623,7 +615,7 @@ On ajoute nos étiquettes (1 pour les pommes, -1 pour les bananes) dans
 la dernière colonne :
 
 ```{code-cell} ipython3
-df_features["class"] = df_clean["class"]
+df_features["class"] = images.index.map(lambda name: 1 if name[0] == 'a' else -1)
 ```
 
 +++ {"user_expressions": []}
@@ -737,7 +729,7 @@ ensemble d'attributs et on les ajoute à notre table `performances` :
 
 ```{code-cell} ipython3
 # Validation croisée (LENT)
-p_tr, s_tr, p_te, s_te = df_cross_validate(df_features_large, sklearn_model, sklearn_metric)
+p_tr, s_tr, p_te, s_te = df_cross_validate(df_features_large.fillna(0), sklearn_model, sklearn_metric)
 metric_name = sklearn_metric.__name__.upper()
 print("AVERAGE TRAINING {0:s} +- STD: {1:.2f} +- {2:.2f}".format(metric_name, p_tr, s_tr))
 print("AVERAGE TEST {0:s} +- STD: {1:.2f} +- {2:.2f}".format(metric_name, p_te, s_te))
@@ -803,7 +795,7 @@ fonction de la corrélation avec les étiquettes).
 # On importe notre modèle
 from sklearn.metrics import balanced_accuracy_score as sklearn_metric
 sklearn_model = KNeighborsClassifier(n_neighbors=3)
-feat_lc_df, ranked_columns = feature_learning_curve(df_features_large, sklearn_model, sklearn_metric)
+feat_lc_df, ranked_columns = feature_learning_curve(df_features_large.fillna(0), sklearn_model, sklearn_metric)
 ```
 
 ```{code-cell} ipython3
@@ -821,7 +813,7 @@ plt.legend(loc='lower right');
 **Exercice** Combien d'attributs pensez-vous utile de conserver?
 Justifiez.
 
-VOTRE RÉPONSE ICI
+3 : yellowness, midBarScore, bottomBarAnalysis : Hormis le jaune, les deux drapeaux ont une certaine quantité de rouge, de blanc et de bleu assez similaire. Il n'est donc pas très pertinent de les différencier sur les quantités de couleurs. Il est peut être plus intéressant de plutôt analyser la manière dont sont placées les couleurs sur le drapeau. De plus, les images ne sont pas parfaitement rognées, il est possible que les fonctions qui calculent la quantité des couleurs aient comptées des couleurs ne faisant pas partie d'un drapeau.
 
 +++ {"user_expressions": []}
 
@@ -830,19 +822,21 @@ contenant les attributs utiles. Pour l'exemple, nous exporterons les
 cinq premiers attributs comme dans l'exemple plus haut :
 
 ```{code-cell} ipython3
-df_features_final.to_csv('features_data.csv') # export des données dans un fichier
+df_features_final = df_features_large.loc[:, ['yellowness', 'midBarScore', 'bottomBarAnalysis', 'class']]
+df_features_final["class"] = df_features["class"]
+df_features.to_csv('features_data.csv') # export des données dans un fichier
 #df_features_final = pd.read_csv('features_data.csv')  # chargement du fichier dans le notebook
 ```
 
 +++ {"user_expressions": []}
 
-Enfin, on ajoute les performance de notre classificateur sur ce
+# Enfin, on ajoute les performance de notre classificateur sur ce
 sous-ensemble d'attributs sélectionnées par analyse de variance
 univariée et on les ajoute à notre tableau de données `performances` :
 
 ```{code-cell} ipython3
 # Validation croisée
-p_tr, s_tr, p_te, s_te = df_cross_validate(df_features_final, sklearn_model, sklearn_metric)
+p_tr, s_tr, p_te, s_te = df_cross_validate(df_features_final.fillna(0), sklearn_model, sklearn_metric)
 metric_name = sklearn_metric.__name__.upper()
 print("AVERAGE TRAINING {0:s} +- STD: {1:.2f} +- {2:.2f}".format(metric_name, p_tr, s_tr))
 print("AVERAGE TEST {0:s} +- STD: {1:.2f} +- {2:.2f}".format(metric_name, p_te, s_te))
@@ -907,11 +901,7 @@ pour le prétraitement de vos images et l'extraction
 d'attributs. Prenez ici quelques notes sur ce que vous avez appris,
 observé, interprété.
 
-VOTRE RÉPONSE ICI
+Nous avons appris que le rognage d'une image peut être particulièrement fastidieux et long si on prend des images n'ayant pas un arrière-plan tout noir ou tout blanc : même si l'objet en lui même n'est pas très complexe. Nous avons observé que le drapeau serbe contient plus de jaune que celui de la Croatie, et que la position de la bande blanche et bleue sur le drapeau serbe est inversée par rapport au drapeau de la Croatie. On a donc supposé que si le rognage était parfait et qu'on traçait une ligne horizontale passant par le centre du drapeau, cette ligne traverserait généralement beaucoup plus de pixels blancs que de bleus s'il s'agit d'un drapeau croate. On a aussi déduit que le pixel se trouvant le plus bas par rapport au centre du drapeau pouvait nous aider à déterminer la classe du drapeau selon la couleur de ce pixel. De plus, l'intensité en couleur jaune nous permet également de différencier les deux drapeaux.
 
 Passez ensuite à la feuille sur la [comparaison de
 classificateurs](4_classificateurs.md)!
-
-```{code-cell} ipython3
-
-```

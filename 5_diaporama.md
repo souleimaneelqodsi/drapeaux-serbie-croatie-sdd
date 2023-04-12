@@ -30,15 +30,28 @@ rise:
 
 +++ {"slideshow": {"slide_type": "slide"}}
 
-# Titre
+# Serbie et croatie
 
-- Binôme: Prénom 1, Nom 1, Prénom 2, Nom 2
-- Adresses mails: 
-- [Dépôt GitLab](https://gitlab.dsi.universite-paris-saclay.fr/xxx.yyy/Semaine8/)
+- Binôme: Kaihi, PAULHIAC, Souleimane, EL QODSI
+- Adresses mails: k.paulhiac@universite-paris-saclay.fr, souleimane.el-qodsi@universie-paris-saclay.fr
+- [Dépôt GitLab](https://gitlab.dsi.universite-paris-saclay.fr/souleimane.el-qodsi/L1InfoInitiationScienceDonnees-2022-2023-Semaine8)
 
 +++ {"slideshow": {"slide_type": "slide"}}
 
 ## Jeu de données
+
++++
+
+Notre jeu de données consiste à classifier les images contenant un drapeau croate et les images contenant un drapeau serbe. Nous avons choisi ce jeu de données pour son originalité et sa complexité challengeante. En effet, en comparant un drapeau serbe et un drapeau croate, on remarque que les deux sont très similaires, notamment par les couleurs (bleu, blanc, rouge).
+
+```{code-cell} ipython3
+from utilities import *
+from intro_science_donnees import data
+from intro_science_donnees import *
+
+images = load_images('data', "*.jpg")
+image_grid(images)
+```
 
 +++ {"slideshow": {"slide_type": "slide"}}
 

@@ -187,9 +187,7 @@ def crop_around_center(img, center, crop_size=32, verbose=False):
     bottom = round(y0 + new_height / 2)
     if verbose:
         print(left, top, right, bottom)
-    # Then crop the image to that box
-    cropped_img = img.crop((left, top, right, bottom))
-    return cropped_img
+    return img.crop((left, top, right, bottom))
 
 
 def convert_image(img: Image.Image, verbose=True) -> np.ndarray:
@@ -399,6 +397,9 @@ def extract_metadata(img: Image.Image) -> pd.Series:
                       for key, value in img.getexif().items()},
                      dtype=object)
 
+
+### Nos fonctions :
+
 def colorStrongFilter(img : Image.Image, c : str, i1 : int, i2 : int) -> np.ndarray:
     """
     Fonction qui permet de mettre en évidence l'intensité d'une couleur (r, v ou b) dans une image en établissant deux seuils : un permettant d'évaluer la force de la couleur dans chaque pixel et l'autre la faiblesse des deux autres couleurs dans chaque pixel.
@@ -422,7 +423,7 @@ def colorStrongFilter(img : Image.Image, c : str, i1 : int, i2 : int) -> np.ndar
     cond2 = moy < i2 # on cherche les pixels faibles en ces deux couleurs (niveau de faiblesse recherchée défini par le paramètre i2)
     return np.logical_and(cond1, cond2) # on cherche les pixels satisfaisant les deux conditions à la fois
   
-def whiteness(img: Image.Image, seuil: int) -> np.ndarray:
+def whiteness(img: Image.Image, seuil: int = 190) -> np.ndarray:
     """
     Calcule un masque de pixels blancs pour une image donnée, en utilisant une méthode de seuillage.
 
@@ -435,12 +436,10 @@ def whiteness(img: Image.Image, seuil: int) -> np.ndarray:
         
     """
     # Conversion de l'image en un tableau numpy
-    arr = np.asarray(img)
+    M = np.array(img)
     # Création d'un tableau de seuil avec la même taille que l'image
-    threshold = np.full(arr.shape, seuil, dtype=arr.dtype)
-    # Calcul du masque de pixels blancs en comparant chaque canal de couleur avec le seuil
-    mask = np.all(arr > threshold, axis=2)
-    return mask
+    threshold = np.full(M.shape, seuil, dtype=M.dtype)
+    return np.all(M > threshold, axis=2)
 
 def axisCheck(img: np.ndarray, y: int, x: int) -> tuple:
     """
@@ -463,12 +462,9 @@ def axisCheck(img: np.ndarray, y: int, x: int) -> tuple:
     M = np.array(img)
     dim = M.shape
     trueCountX = 0
-    trueCountY = 0
-    for i in range(dim[0]): #  Axe vertical
-        if M[i, x] :
-            trueCountY += 1
-    trueCountX = sum([1 for i in M[y] if i])
-            
+    trueCountY = sum(1 for i in range(dim[0]) if M[i, x])
+    trueCountX = sum(bool(i) for i in M[y])
+
     return (trueCountY, trueCountX)
 
 
@@ -544,10 +540,10 @@ def blockCreation(img : Image.Image, yKernel : int, xKernel : int, blockSize : i
         (list) : bloc de taille blockSize * blockSize centré autour du kernel
     """
     M = np.array(img)
-    kernel = []
+    block = []
     rayonBlock = blockSize//2
-    for y in range (yKernel - rayonBlock, yKernel + rayonBlock + 1, 1) : 
-        for x in range(xKernel - rayonBlock, xKernel + rayonBlock + 1 , 1) : 
+    for y in range(yKernel - rayonBlock, yKernel + rayonBlock + 1): 
+        for x in range(xKernel - rayonBlock, xKernel + rayonBlock + 1): 
             if y < 0: 
                 break
             if x < 0:
@@ -556,11 +552,11 @@ def blockCreation(img : Image.Image, yKernel : int, xKernel : int, blockSize : i
                 break
             if y >= M.shape[0] :
                 break
-            kernel.append(M[y , x])
-    return kernel
+            block.append(M[y , x])
+    return block
 
 
-def appartenance(img : Image.Image, y : int, x : int, blockSize : int, rougeIntensite : int, bleuIntensite : int, coeffRouge : int, coeffBleu : int) -> np.ndarray:
+def appartenance(img : Image.Image, y : int, x : int, blockSize : int, rougeIntensite : int, bleuIntensite : int, coeffRouge : float, coeffBleu : float) -> np.ndarray:
     """Selon les données trouvées dans le bloc généré par blockCreation, la fonction permet de déterminer si le pixel entré en paramètres appartient au drapeau ou non à travers un système de score
     
     Arguments :
@@ -571,8 +567,8 @@ def appartenance(img : Image.Image, y : int, x : int, blockSize : int, rougeInte
         (int) : taille du bloc utilisée pour effectuer la recherche (influe sur la performance de la fonction)
         (int) : intensité de rougueur recherchée dans le bloc
         (int) intensité de bleuissement recherchée dans le bloc
-        (int) : coefficient i permettant de déterminer si le rouge est i-ème fois plus grand que le vert et le bleu
-        (int) : coefficient i permettant de déterminer si le bleu est i-ème fois plus grand que le rouge et le vert
+        (float) : coefficient i permettant de déterminer si le rouge est i-ème fois plus grand que le vert et le bleu
+        (float) : coefficient i permettant de déterminer si le bleu est i-ème fois plus grand que le rouge et le vert
     
     Returns :
     ---------
@@ -584,38 +580,34 @@ def appartenance(img : Image.Image, y : int, x : int, blockSize : int, rougeInte
         if i[0] > rougeIntensite:
             operation1 = int(i[2] * coeffRouge)
             operation2 = int(i[1] * coeffRouge)
-            if operation1 < i[0] and operation2 < i[0] :
-                score+= 1
-            else : 
-                score += 0.2
+            score += 1 if operation1 < i[0] and operation2 < i[0] else 0.2
         if i[2] > bleuIntensite: 
             operation1 = int(i[0] * coeffBleu)
             operation2 = int(i[1] * coeffBleu)
-            if operation1 < i[2] and operation2 < i[2] : 
-                score += 1
-            else : 
-                score += 0.2
+            score += 1 if operation1 < i[2] and operation2 < i[2] else 0.2
     score /= len(block) + sys.float_info.epsilon
     return score >= 0.5
 
+#s = 1
 
-def drapeau(img : Image.Image, rougeIntensite : int, bleuIntensite : int, coeffRouge : int, coeffBleu : int, seuil : int) -> np.ndarray: 
+def drapeau(img : Image.Image, rougeIntensite : int = 80, bleuIntensite : int = 80, coeffRouge : float = 1.5, coeffBleu : float = 1.25, seuil : int = None) -> np.ndarray: 
     """
-    Fonction renvoyant un tableau de booléens valant True si le pixel associé appartient à un drapeau serbe/croate, False sinon, à partir des données de rougeur, bleuissement et blancheur du drapeau fournies par les fonctions précédemment écrites
+    Fonction renvoyant un tableau de booléens valant True si le pixel associé appartient à un drapeau serbe/croate, False sinon, à partir des données de rougeur, bleuissement et blancheur du drapeau fournies par les fonctions précédemment écrites -> masque binaire de l'image via segmentation des données par seuillage
     
     Arguments :
     -----------
         (Image.Image) : l'image
         (int) : intensité de rouge fournie à la fonction appartenance
         (int) : intensité de bleu fournie à la fonction appartenance
-        (int) : coefficient de rouge fourni à la fonction appartenance
-        (int) : coefficient de bleu fourni à la fonction appartenance
+        (float) : coefficient de rouge fourni à la fonction appartenance
+        (float) : coefficient de bleu fourni à la fonction appartenance
         (int) : seuil de différence d'intensité fourni à la fonction whiteness
 
     Returns :
     ---------
         (np.ndarray) : tableau de booléens valant True si le pixel associé appartient à un drapeau serbe/croate, False sinon
     """
+    #global s
     M = np.array(img)
     dim = M.shape
     isDrapeau = np.zeros((dim[0], dim[1]))
@@ -623,36 +615,159 @@ def drapeau(img : Image.Image, rougeIntensite : int, bleuIntensite : int, coeffR
     for y in range(dim[0]) :
         for x in range(dim[1]) : 
             isDrapeau[y, x] = appartenance(img, y, x, blockSize, rougeIntensite, bleuIntensite, coeffRouge, coeffBleu)
+    #print(f"Chargement en cours [{s}/{length}]")
+    #s+=1
     print("Opération effectuée")
-    return np.logical_or(isDrapeau, whiteness(img, seuil))
+    return np.logical_or(np.logical_or(isDrapeau, whiteness(img)), yellowness_mask(img))
 
-def crop_flag(img, rougeIntensite=80, bleuIntensite=80, coeffRouge=1.5, coeffBleu=1.25, seuil=200, blockSize=4):
+def crop_flag(img : Image.Image, seuil : float =0.1) -> Image.Image:
     """
-    Crop the image around the Serbian/Croatian flag.
+    Recadrer la zone masquée où il y a une forte concentration de valeurs vraies dans le masque.
+
+    Paramètres:
+        img (numpy.ndarray): l'image d'entrée.
+        mask (numpy.ndarray): le masque binaire.
+        seuil (float): la proportion minimale de valeurs vraies requise pour être considérée comme une forte concentration.
+
+    Retours:
+        numpy.ndarray: l'image recadrée.
+    """
+    masque = drapeau(img)
+
+    # Calcule la proportion des pixels valant True
+    somme_lig = np.sum(masque, axis=1)
+    somme_col = np.sum(masque, axis=0)
+    lig_props = somme_lig / masque.shape[1]
+    col_props = somme_col / masque.shape[0]
+
+    # Trouve les indices des pixels se trouvant dans les zones à forte concentration de valeurs vraies
+    row_indices = np.where(lig_props >= seuil)[0]
+    col_indices = np.where(col_props >= seuil)[0]
+
+    # Cherche les "frontières" de la zone à rogner
+    haut = row_indices.min()
+    bas = row_indices.max()
+    gauche = col_indices.min()
+    droite = col_indices.max()
+
+    return img.crop((gauche, haut, droite, bas))
+
+
+def yellowness_mask(img : Image.Image, seuil_sup : int = 150, seuil_inf : int = 90) -> np.ndarray:
+    """
+    Fonction crééant un masque binaire des pixels jaunes, via un procédé de segmentation des données par seuillage et réunion par opération binaire ET
     
     Args:
-        img (PIL.Image.Image): The image to crop.
-        rougeIntensite (int): The intensity of redness to look for in the flag. Default is 160.
-        bleuIntensite (int): The intensity of blueness to look for in the flag. Default is 160.
-        coeffRouge (int): The coefficient to determine if the red is i times greater than green and blue. Default is 1.
-        coeffBleu (int): The coefficient to determine if the blue is i times greater than red and green. Default is 1.
-        seuil (int): The threshold value to use for the segmentation. Default is 210.
-        blockSize (int): The size of the block to use for the search. Default is 11.
-        
+    ------
+        (Image.Image) : image
+        (int) : threshold de supériorité pour récupérer les pixels verts et rouges
+        (int) : threshold d'infériorité pour séparer les pixels jaunes des pixels blancs
     Returns:
-        PIL.Image.Image: The cropped image.
+    --------
+        (np.ndarray) : tableau de masque de l'image binarisée
+    
     """
-    # Create the binary mask
-    mask = drapeau(img, rougeIntensite, bleuIntensite, coeffRouge, coeffBleu, seuil)
+    M = np.array(img)
+    red = M[:, :, 0] >= seuil_sup
+    green = M[:, :, 1] >= seuil_sup
+    blue = M[:, :, 2] <= seuil_inf
+    return np.logical_and(np.logical_and(red, green), blue)
+
+
+def yellowness(img: Image.Image) -> float:
+    """Return the yellowness of a PIL image.
+
+    Assumption: the background pixels are defined by being transparent.
+    """
+    M = np.array(img)
+    R = M[:, :, 0] * 1.0
+    G = M[:, :, 1] * 1.0
+    Y = 0.5 * (R + G)
+    F = M[:, :, 3] > 0
+    return np.mean(Y[F])
+
+
+def axeCreation(M : np.ndarray, centre : tuple) -> list:
+    """
+    Fonction qui donne les pixels se trouvant sur l'axe horizontal passant par le centre de l'objet. 
     
-    # Find the indices of the True values
-    indices = np.where(mask)
+    Arguments:
+    ----------
+    (np.array) : np.array de l'image 
+    (float, float) : coordonnées du centre de l'objet
     
-    # Crop the image around the flag
-    left = min(indices[1])
-    right = max(indices[1])
-    top = min(indices[0])
-    bottom = max(indices[0])
+    Returns:
+    --------
+    (list) : liste de pixels de M avec leurs composantes RGB.
     
-    cropped = img.crop((left, top, right, bottom))
-    return cropped
+    """
+    centreY = int(centre[1]//1) #Conversion en int
+    return [
+        M[centreY, x]
+        for x in range(M.shape[1])
+        if (M[centreY, x, 0], M[centreY, x, 1], M[centreY, x, 2])
+        != (255, 255, 255)
+    ] 
+
+    
+def discriminant(img : Image.Image, centre : tuple, bleuIntensite : int = 80, coeffBleu : float = 1.25) -> list:
+    """
+    Fonction qui détermine si le pixel se trouvant le plus en bas du drapeau en partant du centre est bleu : si oui, cela veut dire qu'il y a des chances que le drapeau soit croate, car le 
+    drapeau serbe contient une bande blanche au lieu de bleu.
+    
+    Arguments:
+    ----------
+    (Image.Image) : L´image
+    tuple (float, float) : coordonnées du centre de l'objet
+    
+    Returns:
+    --------
+    (list) : liste de pixels de M avec leurs composantes RGB.
+    """
+    M = np.array(img)
+    centreX =int(centre[0]//1)
+    discriminant = [
+        M[y, centreX]
+        for y in range(M.shape[0])
+        if (M[y, centreX, 0], M[y, centreX, 1], M[y, centreX, 2])
+        not in [(255, 255, 255), (0, 0, 0)]
+    ]
+    print(discriminant[-1])
+    return (
+        discriminant[-1][2] > bleuIntensite
+        and discriminant[-1][1] * coeffBleu < discriminant[-1][2]
+        and discriminant[-1][0] * coeffBleu < discriminant[-1][2]
+    ) 
+            
+def analyseCentre(img : Image.Image, centre, bleuIntensite = 80, coeffBleu : float = 1.25, power = 190) -> int:
+    """
+    Fonction qui détermine la catégorie du drapeau selon ce qui se trouve sur l'axe horizontale traversant le centre du drapeau.
+    
+    Arguments : 
+    -----------
+        (Image.Image) : L´image
+        (int) : Le centre de l´image 
+        (int) : La valeur que doit avoir le bleu d'une composante RBG d'un pixel pour passer le test
+        (float) : coefficient qui indique que les couleurs rouges et vertes doivent avoir une valeur égale à moins de 75% du bleu pour passer le test
+        (power) : l'intensité de blancheur que doit avoir le pixel pour passer le test
+    
+    Returns:
+    --------
+        (Int) : Un score, plus il est élevé plus il est probable que ce soit un drapeau croate.
+    """
+    #On ne prend pas en compte le rouge, car les 2 drapeaux possèdent du rouge dans leurs ecussons aux centres du drapeau.
+    M = np.array(img)
+    dim = M.shape
+    score = 0
+    block = axeCreation(M, centre)
+    for i in block: 
+        if i[2] > bleuIntensite and i[1] * coeffBleu < i[2] and i[0] * coeffBleu < i[2] : #est bleu
+                score -= 1 #Score arbitraire; il se peut que le blason du drapeau serbe, qui est de couleur rouge et blanc, poussent la fonction a donné un résultat trompeur
+        if (
+            i[1] >= power
+            and i[2] >= power
+            and i[0] >= power
+            and (i[0], i[1], i[2]) != (255, 255, 255)
+        ):
+            score += 1
+    return score

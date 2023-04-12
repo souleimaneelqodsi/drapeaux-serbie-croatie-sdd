@@ -236,7 +236,7 @@ resp. sur-appris ?
 
 +++ {"deletable": false, "nbgrader": {"cell_type": "markdown", "checksum": "c366698d4803f51a5a5cf85ab64cc394", "grade": true, "grade_id": "cell-c4a46b1532ae7fe4", "locked": false, "points": 0, "schema_version": 3, "solution": true, "task": false}, "user_expressions": []}
 
-VOTRE RÉPONSE ICI
+Selon la matrice ci-dessus, les classificateurs sur-appris sont : RBF SVM (Radical Basis Function Support Vector Machine) et Random Forest. Quant aux classificateurs sous-appris, on peut citer : le KNN, le Linear SVM (Linear Support Vector Machine) et le QDA (Quadratic Discriminant Analysis).
 
 +++ {"user_expressions": []}
 
@@ -758,7 +758,7 @@ Cette feuille a fait un tour d'horizon d'outils de classification à
 votre disposition. Prenez ici quelques notes sur ce que vous avez
 appris, observé, interprété.
 
-VOTRE RÉPONSE ICI
+On a observé que l'AdaBoost et le Neural Net étaient les algorithmes d'apprentissage pour la classication les plus efficaces pour notre jeu de données, sur l'ensemble d'entraînement comme sur l'ensemble de tests.
 
 +++
 
