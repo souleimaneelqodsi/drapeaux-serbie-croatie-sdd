@@ -32,15 +32,11 @@ rise:
 
 # Serbie et croatie
 
-- Binôme: Kaihi, PAULHIAC, Souleimane, EL QODSI
+- Binôme: Kaiji, PAULHIAC, Souleimane, EL QODSI
 - Adresses mails: k.paulhiac@universite-paris-saclay.fr, souleimane.el-qodsi@universie-paris-saclay.fr
 - [Dépôt GitLab](https://gitlab.dsi.universite-paris-saclay.fr/souleimane.el-qodsi/L1InfoInitiationScienceDonnees-2022-2023-Semaine8)
 
 ```{code-cell} ipython3
----
-jupyter:
-  source_hidden: true
----
 # Automatically reload code when changes are made
 %load_ext autoreload
 %autoreload 2
@@ -92,7 +88,7 @@ Le prétraitement de nos données a été très difficile, c'est en fait la part
 
 L'étape de visualisation nous a permis d'avoir une vue d'ensemble des  données pour mieux comprendre leur structure. Dans notre projet, nous avons appliqué cette étape en utilisant des graphiques et des matrices de corrélation pour explorer les différentes caractéristiques de notre jeu de données. Nous avons utilisé des classificateurs tels que le KNN pour regrouper les images en fonction de leurs caractéristiques et avons ensuite visualisé les résultats de cette classification.
 
-Comme mentionné précédemment, les matrices de corrélation, sur la table standardisée, nous a permis de constater que certains attributs étaient fortement corrélées, tandis que d'autres étaient faiblement corrélées, comme par exemple .
+Comme mentionné précédemment, les matrices de corrélation, sur la table standardisée, nous a permis de constater que certains attributs étaient fortement corrélées, tandis que d'autres étaient faiblement corrélées, comme par exemple redness et blueness (forte corrélation négative) ou class et blueness (faible corrélation : le bleu ne permet pas de distinguer les deux classes) .
 L'étape de visualisation nous a aussi permis de déterminer le nombre optimal d'attributs, en observant un graphique de la performance du modèle en fonction du nombre d'attributs, et nous avons observé que le nombre d'attributs n'affecte pas fortement les performances, néanmoins, on peut souligner qu'un nombre d'attributs entre 1 et 3 ou 19 et 21 garantit des performances optimales.
 
 +++ {"slideshow": {"slide_type": "slide"}}
@@ -109,27 +105,30 @@ Les algorithmes de classification favoris que nous retenons sont l'AdaBoost et l
 
 ### Observations
 
-```{code-cell} ipython3
++++
 
-```
+On a pu observer déjà que dans le jeu de données sans attributs/brut, les résultats sont similaires aux résultats sur la table prétraitée (validation croisée) (avg training/test avec données brutes : 0.71/0.51 -> avg training/test avec données prétraitées 0.74/0.47).
+Sur notre ensemble d'attributs larges, on obtient de même des résultats similaires (0.78/0.52). En revanche, avec 6 attributs ad-hoc, les résultats sont beaucoup plus performants (0.89/0.84) et similaires à lorsque l'on fait une ANOVA (0.87/0.81). Ainsi, globalement, le modèle est beaucoup plus performant avec 6 attributs ad-hoc ou avec 5 attributs par analyse de variance univariée. En utilisant des classificateurs, on observe que les résultats sont presque parfaits pour les algorithmes de classification AdaBoost et NeuralNet (0.96/0.96 et 1/0.94)
+
++++
 
 ### Interprétations
 
-```{code-cell} ipython3
++++
 
-```
+Les attributs ad-hoc permettent de radicalement booster la classification des deux drapeaux, les classificateurs sont très peformants. On peut en déduire que notre prétraitement a été bien effectué et les attributs bien choisis.
 
 +++ {"slideshow": {"slide_type": "slide"}, "jp-MarkdownHeadingCollapsed": true}
 
 ## Discussion 
 
 Comme mentionné précédemment, la difficulté majeure était de prétraiter des images quasi-aléatoirement choisies sur Internet, de taille/luminosité/arrière-plan/résolution différent-e(s), ce qui nous a forcé à fournir le plus gros effort du projet sur cette partie-là, mais le résultat final était assez satisafaisant, nos fonctions drapeau et crop_flag sont lentes puisque la quantité de calcul est conséquente mais leur performance ne déçoit pas sur la plupart des images. <br> <br>
-En outre, nous avons conscience que notre projet pourrait être utilisé dans la vraie vie, notamment à des buts de surveillance. En effet, peut être utilisé pour suivre l'utilisation des drapeaux sur les médias sociaux ou sur les sites Web. Cette information peut être utilisée pour surveiller les sentiments nationalistes, les tendances politiques ou les activités transfrontalières potentiellement sensibles. Le passé politique de la Serbie et de la Croatie rend l'utilisation de notre projet particulièrement pertinente. La région des Balkans a été le théâtre de conflits  violents au cours des dernières décennies. Les tensions entre les Serbes et les Croates ont souvent été liées à l'utilisation de symboles nationaux tels que les drapeaux. Pendant la guerre en Croatie de 1991 à 1995, les forces serbes ont utilisé le drapeau serbe comme symbole de leur campagne militaire en Croatie. Le drapeau serbe est donc souvent considéré comme un symbole de l'agression serbe en Croatie. D'un autre côté, le drapeau croate est souvent associé à l'indépendance de la Croatie vis-à-vis de la Yougoslavie et est utilisé comme symbole de la nation croate. Ainsi, la classification d'images des drapeaux serbes et croates peut être utilisée pour surveiller les tensions entre les deux pays et pour identifier les mouvements nationalistes. Elle peut également aider les autorités à prévenir les conflits potentiels en surveillant l'utilisation des drapeaux dans les manifestations et les rassemblements politiques.
+En outre, nous avons conscience que notre projet pourrait être utilisé dans la vraie vie, notamment à des buts de surveillance. En effet, il peut être utilisé pour suivre l'utilisation des drapeaux sur les médias sociaux ou sur les sites Web. Cette information peut être utilisée pour surveiller les sentiments nationalistes, les tendances politiques ou les activités transfrontalières potentiellement sensibles. Le passé politique de la Serbie et de la Croatie rend l'utilisation de notre projet particulièrement pertinente. La région des Balkans a été le théâtre de conflits  violents au cours des dernières décennies. Les tensions entre les Serbes et les Croates ont souvent été liées à l'utilisation de symboles nationaux tels que les drapeaux. Pendant la guerre en Croatie de 1991 à 1995, les forces serbes ont utilisé le drapeau serbe comme symbole de leur campagne militaire en Croatie. Le drapeau serbe est donc souvent considéré comme un symbole de l'agression serbe en Croatie. D'un autre côté, le drapeau croate est souvent associé à l'indépendance de la Croatie vis-à-vis de la Yougoslavie et est utilisé comme symbole de la nation croate. Ainsi, la classification d'images des drapeaux serbes et croates peut être utilisée pour surveiller les tensions entre les deux pays et pour identifier les mouvements nationalistes. Elle peut également aider les autorités à prévenir les conflits potentiels en surveillant l'utilisation des drapeaux dans les manifestations et les rassemblements politiques.
 
 +++
 
 ## Conclusion
 
-```{code-cell} ipython3
++++
 
-```
+Le projet présenté a nécessité un prétraitement de données difficile, en particulier pour isoler le drapeau dans les images sélectionnées. Le masque binaire obtenu par segmentation des données a permis de rogner les images pour obtenir la zone la plus susceptible d'être le drapeau. Les matrices de corrélation et la visualisation ont permis de déterminer le nombre optimal d'attributs pour une performance optimale. Les algorithmes de classification les plus performants sont l'AdaBoost et le NeuralNet. Les résultats ont montré que le modèle est beaucoup plus performant avec 6 attributs ad-hoc ou avec 5 attributs par analyse de variance univariée. Les classificateurs AdaBoost et NeuralNet donnent des résultats presque parfaits pour les deux drapeaux.

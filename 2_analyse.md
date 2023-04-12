@@ -810,6 +810,10 @@ Les feuilles suivantes aborderont d'autres aspects de l'analyse
 (biais, prétraitement, classifieur). Ouvrez la feuille
 sur le [prétraitement et l'extraction d'attributs](3_extraction_d_attributs.md).
 
-+++
+```{code-cell} ipython3
 
-##
+```
+
+```{code-cell} ipython3
+
+```
