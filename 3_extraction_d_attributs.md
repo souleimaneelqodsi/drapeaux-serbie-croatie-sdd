@@ -502,7 +502,7 @@ pixel calculée avec $R-(G+B)/2$ :
 
 ```{code-cell} ipython3
 image_grid([difference_filter(img)
-            for img in clean_sample])
+            for img in clean_images])
 ```
 
 +++ {"user_expressions": []}
@@ -511,7 +511,7 @@ Pour d'autres idées de mesures sur les couleurs, consulter [cette page
 wikipédia](https://en.wikipedia.org/wiki/HSL_and_HSV).
 
 ```{code-cell} ipython3
-yellow = [yellowness_mask(img) for img in sample]
+yellow = [yellowness_mask(img) for img in clean_images]
 image_grid(yellow)
 ```
 
@@ -530,7 +530,7 @@ appliquer les opérateurs binaires `<`, `>`, `==`, etc.
 
 ```{code-cell} ipython3
 image_grid([np.mean(np.array(img), axis = 2) < 100 
-            for img in clean_sample])
+            for img in clean_images])
 ```
 
 +++ {"user_expressions": []}
@@ -546,7 +546,7 @@ contours avec la fonction `contours` :
 
 ```{code-cell} ipython3
 image_grid([contours(np.mean(np.array(img), axis = 2) < 100 ) 
-            for img in clean_sample])
+            for img in clean_images])
 ```
 
 +++ {"user_expressions": []}
