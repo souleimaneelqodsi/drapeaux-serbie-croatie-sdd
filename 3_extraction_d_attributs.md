@@ -312,10 +312,6 @@ cette fonction par rapport à l'ancienne fonction `crop_image` de la
 semaine précédente :
 
 ```{code-cell} ipython3
----
-jupyter:
-  outputs_hidden: true
----
 cropped = [crop_flag(img) for img in sample]
 ```
 
@@ -370,10 +366,6 @@ plt.imshow(my_preprocessing(images[0]));
 Appliquons le prétraitement à toutes les images :
 
 ```{code-cell} ipython3
----
-jupyter:
-  outputs_hidden: true
----
 clean_images = images.apply(my_preprocessing)
 image_grid(clean_images)
 ```
@@ -583,10 +575,6 @@ Ainsi que trois autres attributs sur la forme:
 6. `surface` : nombre de pixels `True` après avoir extrait la forme.
 
 ```{code-cell} ipython3
----
-jupyter:
-  outputs_hidden: true
----
 foreground = [my_foreground_filter(img) for img in clean_images]
 dataScore = [(np.mean(np.argwhere(img)[:, 1]), np.mean(np.argwhere(img)[:, 0])) for img in foreground]
 
