@@ -5,6 +5,12 @@
 - Adresses mails: k.paulhiac@universite-paris-saclay.fr, souleimane.el-qodsi@universie-paris-saclay.fr
 - [Dépôt GitLab](https://gitlab.dsi.universite-paris-saclay.fr/souleimane.el-qodsi/L1InfoInitiationScienceDonnees-2022-2023-Semaine8)
 
+## Mentions importantes
+
+Ce projet a été réalisé **en binôme** dans le cadre du projet d'introduction à la science des données du 2ème semestre de licence portail mathématiques-informatique à l'université Paris-Saclay.
+Les concepteurs et auteurs de la structure initiale du projet, des fichiers Markdown/Jupyter Notebook, de nombreuses cellules de code et de texte, ainsi que de nombreuses fonctions dans utilities.py et du fichier index.md sont : (Nicolas Thiéry)[nicolas.thiery.name] et Fanny Pouyet. Ces éléments sont soumis à licence CC-BY-SA. Les modifications et ajouts ultérieurs ont été réalisés par Kaiji PAULHIAC et Souleimane EL QODSI. 
+Le projet est lisible sur Jupyter(Lab) uniquement.
+
 ## Jeu de données
 
 Notre jeu de données consiste à classifier les images contenant un drapeau croate et les images contenant un drapeau serbe. Nous avons choisi ce jeu de données pour son originalité et sa complexité challengeante. En effet, en comparant un drapeau serbe et un drapeau croate, on remarque que les deux sont très similaires, notamment par les couleurs (bleu, blanc, rouge).
